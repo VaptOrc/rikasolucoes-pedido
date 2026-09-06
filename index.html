@@ -6,6 +6,7 @@
 <title>VaptOrc</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   :root{
     --ink:#16233D; --ink-soft:#243350; --blueprint:#2F5D8A; --copper:#B9662E; --copper-dark:#9A5323;
@@ -20,8 +21,6 @@
 
   #app{display:flex;min-height:100vh;}
   .main-col{flex:1;display:flex;flex-direction:column;min-width:0;}
-
-  /* SIDEBAR (desktop only) */
   .sidebar{display:none;}
 
   header{background:var(--ink);color:var(--white);padding:20px 18px 16px;flex-shrink:0;}
@@ -84,6 +83,7 @@
   .simple-item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:9px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
   .simple-item span.sub{color:var(--slate);font-size:12px;}
   .simple-item .del-btn{background:none;border:none;color:var(--red);font-size:19px;cursor:pointer;padding:2px 6px;line-height:1;}
+  .simple-item .valor{font-size:13.5px;font-weight:600;color:var(--ink);}
 
   .field-group{margin-bottom:18px;}
   .field-group .label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
@@ -125,8 +125,8 @@
   .doc-block h4{margin:0 0 6px;font-size:12px;letter-spacing:.2px;color:var(--copper-dark);font-family:'Inter',sans-serif;font-weight:700;}
   .doc-block p{margin:0 0 6px;white-space:pre-line;}
   .doc-total-row{display:flex;justify-content:space-between;padding-top:10px;margin-top:4px;border-top:1px solid var(--line);font-weight:700;font-size:14.5px;color:var(--ink);}
-  .doc-actions{display:flex;gap:10px;margin-top:16px;}
-  .doc-actions button{flex:1;}
+  .doc-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+  .doc-actions button{flex:1;min-width:100px;}
   .btn-ghost{background:var(--white);border:1px solid var(--line);color:var(--ink);padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;}
   .btn-danger{background:var(--white);border:1px solid var(--red);color:var(--red);padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;width:100%;margin-top:10px;}
   .sig-img{max-height:46px;display:block;margin:6px 0;}
@@ -145,14 +145,12 @@
   .login-msg{text-align:center;margin-top:14px;font-size:12.5px;color:var(--slate);min-height:16px;}
 
   .logout-link{display:block;text-align:center;margin-top:22px;font-size:12.5px;color:var(--slate);cursor:pointer;text-decoration:underline;}
-  .doc-hint{font-size:11px;color:var(--slate);margin-top:8px;}
 
-  /* ===== DESKTOP LAYOUT ===== */
   @media (min-width:860px){
     body{background:var(--paper-dim);}
     .sidebar{
       display:flex;flex-direction:column;width:230px;flex-shrink:0;
-      background:var(--ink);color:#fff;padding:26px 14px;position:sticky;top:0;height:100vh;
+      background:var(--ink);color:#fff;padding:26px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;
     }
     .sidebar .side-brand{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:19px;margin:4px 8px 26px;}
     .sidebar button{
@@ -172,7 +170,7 @@
     header .back{color:var(--ink);}
     main{max-width:760px;margin:0 auto;width:100%;padding:28px 32px 60px;}
     #screen-login{margin-top:60px;}
-    .grid{grid-template-columns:repeat(4,1fr);}
+    .grid{grid-template-columns:repeat(3,1fr);}
   }
 </style>
 </head>
@@ -192,6 +190,14 @@
     <button data-nav="clientes" onclick="showScreen('clientes')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c2 .2 3.8 1.9 4.3 4.6"/></svg>
       Clientes
+    </button>
+    <button data-nav="financeiro" onclick="showScreen('financeiro')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16" cy="14" r="1.2"/></svg>
+      Financeiro
+    </button>
+    <button data-nav="catalogo" onclick="showScreen('catalogo')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      Materiais &amp; Serviços
     </button>
     <button data-nav="relatorios" onclick="showScreen('relatorios')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
@@ -254,6 +260,16 @@
           <div class="name">Clientes</div>
           <div class="desc">Histórico e contato</div>
         </div>
+        <div class="tile" onclick="showScreen('financeiro')">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><circle cx="16" cy="14" r="1.2"/></svg></div>
+          <div class="name">Financeiro</div>
+          <div class="desc">Fluxo de caixa aprovado</div>
+        </div>
+        <div class="tile" onclick="showScreen('catalogo')">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="1.5"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+          <div class="name">Materiais &amp; Serviços</div>
+          <div class="desc">Catálogo pra usar no orçamento</div>
+        </div>
         <div class="tile" onclick="showScreen('relatorios')">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
           <div class="name">Relatórios</div>
@@ -286,7 +302,7 @@
       <div id="clientesList"><div class="empty-state"><p>Carregando...</p></div></div>
     </section>
 
-    <!-- FORM CLIENTE (novo / editar) -->
+    <!-- FORM CLIENTE -->
     <section class="screen" id="screen-cliente-form">
       <div class="field-group">
         <label class="label">CNPJ ou CPF</label>
@@ -308,13 +324,52 @@
       <button class="cta-full" onclick="salvarCliente()" id="salvarClienteBtn">Salvar cliente</button>
     </section>
 
+    <!-- FINANCEIRO -->
+    <section class="screen" id="screen-financeiro">
+      <div class="home-hero">
+        <p class="eyebrow">Fluxo de caixa</p>
+        <h2 id="finTotal">R$ 0,00</h2>
+        <p>Soma de todos os orçamentos aprovados em diante (aprovado, em andamento, aguardando pagamento, concluído ou em garantia).</p>
+      </div>
+      <p class="section-title">POR MÊS</p>
+      <div id="finMeses"></div>
+      <hr class="section-divider">
+      <p class="section-title">ORÇAMENTOS CONSIDERADOS</p>
+      <div id="finLista"><div class="empty-state"><p>Carregando...</p></div></div>
+    </section>
+
+    <!-- MATERIAIS & SERVIÇOS (catálogo) -->
+    <section class="screen" id="screen-catalogo">
+      <button class="cta-full" style="margin-top:0;margin-bottom:16px;" onclick="abrirNovoCatalogo()">+ Novo item</button>
+      <div id="catalogoList"><div class="empty-state"><p>Carregando...</p></div></div>
+    </section>
+
+    <section class="screen" id="screen-catalogo-form">
+      <div class="field-group">
+        <label class="label">Nome do item</label>
+        <input type="text" id="catNome" placeholder="Ex.: Disjuntor 40A, ou Instalação de tomada">
+      </div>
+      <div class="field-group">
+        <label class="label">Tipo</label>
+        <div class="segmented">
+          <button type="button" class="active" id="catTipoMaoObraBtn" onclick="setCatTipo('mao_obra')">Mão de obra</button>
+          <button type="button" id="catTipoServicoBtn" onclick="setCatTipo('servico')">Serviço</button>
+          <button type="button" id="catTipoMaterialBtn" onclick="setCatTipo('material')">Peça</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="label">Valor unitário (R$)</label>
+        <input type="number" id="catValor" min="0">
+      </div>
+      <button class="cta-full" onclick="salvarCatalogo()" id="salvarCatalogoBtn">Salvar item</button>
+    </section>
+
     <!-- RELATÓRIOS -->
     <section class="screen" id="screen-relatorios">
       <div class="simple-item" style="cursor:default;"><div>Orçamentos por status<br><span class="sub">pendente, aprovado, concluído...</span></div><span>→</span></div>
-      <div class="simple-item" style="cursor:default;"><div>Faturamento por período<br><span class="sub">o quanto foi fechado por mês</span></div><span>→</span></div>
       <div class="simple-item" style="cursor:default;"><div>Comércio × Consultoria<br><span class="sub">quanto vem de cada modelo</span></div><span>→</span></div>
       <div class="simple-item" style="cursor:default;"><div>Consumo de banco de horas<br><span class="sub">quanto cada cliente já usou</span></div><span>→</span></div>
-      <div class="empty-state"><p>Esses relatórios ainda são placeholders — próxima etapa é calcular a partir dos orçamentos reais.</p></div>
+      <div class="empty-state"><p>Esses relatórios ainda são placeholders — o fluxo de caixa real já está em Financeiro.</p></div>
     </section>
 
     <!-- MINHA EMPRESA -->
@@ -391,8 +446,15 @@
       <div id="blocoComercio">
         <hr class="section-divider">
         <p class="section-title">ITENS DO ORÇAMENTO</p>
+        <div class="field-group">
+          <label class="label">Adicionar do catálogo</label>
+          <select id="catalogoSelect" onchange="adicionarDoCatalogo()">
+            <option value="">Selecionar item do catálogo...</option>
+          </select>
+          <div class="hint">Cadastra seus materiais e serviços em "Materiais &amp; Serviços" pra aparecer aqui.</div>
+        </div>
         <div id="itemsList"></div>
-        <button class="btn-ghost" style="width:100%;margin-bottom:6px;" onclick="addItem()">+ Adicionar item</button>
+        <button class="btn-ghost" style="width:100%;margin-bottom:6px;" onclick="addItem()">+ Adicionar item manual</button>
       </div>
 
       <div id="blocoConsultoria" style="display:none;">
@@ -450,6 +512,7 @@
       <div class="doc-paper" id="docContent"></div>
       <div class="doc-actions">
         <button class="btn-ghost" onclick="showScreen('novo')">Editar</button>
+        <button class="btn-ghost" onclick="baixarPdf()">Baixar PDF</button>
         <button class="cta-full" id="salvarOrcBtn" onclick="salvarOrcamento()">Salvar e enviar</button>
       </div>
     </section>
@@ -487,13 +550,15 @@
     'orcamento-detalhe': ['Orçamento', 'status e ações'],
     clientes: ['Clientes', 'quem já pediu orçamento'],
     'cliente-form': ['Cliente', 'dados de contato'],
+    financeiro: ['Financeiro', 'fluxo de caixa dos orçamentos aprovados'],
+    catalogo: ['Materiais & Serviços', 'itens prontos pra usar no orçamento'],
+    'catalogo-form': ['Item do catálogo', 'nome, tipo e valor'],
     relatorios: ['Relatórios', 'o que os números dizem'],
     empresa: ['Minha empresa', 'dados que aparecem no orçamento'],
     novo: ['Novo orçamento', 'preencha e gere o documento'],
     doc: ['Documento', 'pronto para enviar ao cliente'],
   };
   const tabScreens = ['home','orcamentos','clientes','relatorios'];
-  const navScreens = ['home','orcamentos','clientes','relatorios','empresa'];
   let history = ['login'];
   let modoAtual = 'comercio';
   let modeloContratoAtual = 'banco';
@@ -503,8 +568,13 @@
   let company = {};
   let editingClienteId = null;
   let clientesCache = [];
+  let catalogoCache = [];
+  let editingCatalogoId = null;
+  let catTipoAtual = 'mao_obra';
   const statusLabel = {pendente:'Pendente', aprovado:'Aprovado', andamento:'Em andamento', aguardando_pagamento:'Aguardando pagamento', concluido:'Concluído', garantia:'Garantia', cancelado:'Cancelado'};
   const statusOrdem = ['pendente','aguardando_aprovacao','aprovado','andamento','aguardando_pagamento','concluido','garantia','cancelado'];
+  const statusConfirmados = ['aprovado','andamento','aguardando_pagamento','concluido','garantia'];
+  const tipoItemLabel = {servico:'Serviço', mao_obra:'Mão de obra', material:'Peça'};
 
   function authHeaders(extra){
     return Object.assign({
@@ -529,6 +599,9 @@
     if(name==='orcamentos') carregarOrcamentos();
     if(name==='clientes') carregarClientes();
     if(name==='empresa') preencherFormEmpresa();
+    if(name==='financeiro') carregarFinanceiro();
+    if(name==='catalogo') carregarCatalogoLista();
+    if(name==='novo') popularCatalogoSelect();
   }
   function goBack(){
     history.pop();
@@ -882,6 +955,135 @@
     }catch(e){ alert('Não deu pra excluir — capaz de já ter orçamento vinculado a esse cliente.'); }
   }
 
+  // ===================== FINANCEIRO =====================
+  async function carregarFinanceiro(){
+    document.getElementById('finLista').innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    document.getElementById('finMeses').innerHTML = '';
+    try{
+      const filtroStatus = statusConfirmados.join(',');
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&status=in.(${filtroStatus})&select=id,numero,status,valor_total,data_emissao,clientes(nome)&order=data_emissao.desc`, { headers: authHeaders() });
+      const rows = res.ok ? await res.json() : [];
+      const total = rows.reduce((s,r)=>s+Number(r.valor_total||0),0);
+      document.getElementById('finTotal').textContent = 'R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+      const porMes = {};
+      rows.forEach(r=>{
+        const chave = r.data_emissao ? r.data_emissao.slice(0,7) : 'sem-data';
+        porMes[chave] = (porMes[chave]||0) + Number(r.valor_total||0);
+      });
+      const meses = Object.keys(porMes).sort().reverse();
+      document.getElementById('finMeses').innerHTML = meses.length ? meses.map(m=>{
+        let label = 'Sem data';
+        if(m !== 'sem-data'){
+          const partes = m.split('-');
+          const d = new Date(parseInt(partes[0]), parseInt(partes[1])-1, 1);
+          label = d.toLocaleDateString('pt-BR',{month:'long', year:'numeric'});
+        }
+        return `<div class="simple-item" style="cursor:default;"><div>${label}</div><span class="valor">R$ ${porMes[m].toLocaleString('pt-BR',{minimumFractionDigits:2})}</span></div>`;
+      }).join('') : '<div class="empty-state"><p>Nada aprovado ainda.</p></div>';
+
+      document.getElementById('finLista').innerHTML = rows.length ? rows.map(r=>`
+        <div class="quote-card status-${r.status}" style="cursor:default;">
+          <div class="row1"><span class="num mono">ORÇ-${String(r.numero).padStart(3,'0')}</span><span class="cat-tag">${r.data_emissao ? new Date(r.data_emissao+'T00:00:00').toLocaleDateString('pt-BR') : ''}</span></div>
+          <div class="cliente">${r.clientes ? r.clientes.nome : '—'}</div>
+          <div class="row2"><span class="valor">R$ ${Number(r.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><span class="badge status-${r.status}">${statusLabel[r.status]||r.status}</span></div>
+        </div>
+      `).join('') : '<div class="empty-state"><p>Nenhum orçamento aprovado ainda.</p></div>';
+    }catch(e){
+      document.getElementById('finLista').innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>';
+    }
+  }
+
+  // ===================== MATERIAIS & SERVIÇOS (catálogo) =====================
+  async function fetchCatalogo(){
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_itens?empresa_id=eq.${empresaId}&select=*&order=nome.asc`, { headers: authHeaders() });
+      catalogoCache = res.ok ? await res.json() : [];
+    }catch(e){ catalogoCache = []; }
+  }
+  async function carregarCatalogoLista(){
+    const list = document.getElementById('catalogoList');
+    list.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    await fetchCatalogo();
+    if(!catalogoCache.length){ list.innerHTML = '<div class="empty-state"><p>Nenhum item ainda — cadastra materiais e serviços que você usa sempre, pra adicionar rápido num orçamento.</p></div>'; return; }
+    list.innerHTML = catalogoCache.map(c=>`
+      <div class="simple-item" onclick="abrirEditarCatalogo('${c.id}')">
+        <div>${c.nome}<br><span class="sub">${tipoItemLabel[c.tipo]||c.tipo}</span></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="valor">R$ ${Number(c.valor_unitario).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+          <button class="del-btn" onclick="event.stopPropagation();excluirCatalogo('${c.id}')">×</button>
+        </div>
+      </div>
+    `).join('');
+  }
+  function setCatTipo(tipo){
+    catTipoAtual = tipo;
+    document.getElementById('catTipoMaoObraBtn').classList.toggle('active', tipo==='mao_obra');
+    document.getElementById('catTipoServicoBtn').classList.toggle('active', tipo==='servico');
+    document.getElementById('catTipoMaterialBtn').classList.toggle('active', tipo==='material');
+  }
+  function abrirNovoCatalogo(){
+    editingCatalogoId = null;
+    document.getElementById('catNome').value = '';
+    document.getElementById('catValor').value = '';
+    setCatTipo('mao_obra');
+    document.getElementById('salvarCatalogoBtn').textContent = 'Salvar item';
+    showScreen('catalogo-form');
+  }
+  function abrirEditarCatalogo(id){
+    const c = catalogoCache.find(x=>x.id===id);
+    if(!c) return;
+    editingCatalogoId = id;
+    document.getElementById('catNome').value = c.nome || '';
+    document.getElementById('catValor').value = c.valor_unitario || '';
+    setCatTipo(c.tipo);
+    document.getElementById('salvarCatalogoBtn').textContent = 'Salvar alterações';
+    showScreen('catalogo-form');
+  }
+  async function salvarCatalogo(){
+    const payload = {
+      nome: document.getElementById('catNome').value,
+      tipo: catTipoAtual,
+      valor_unitario: parseFloat(document.getElementById('catValor').value)||0
+    };
+    if(!payload.nome){ alert('Preenche o nome do item.'); return; }
+    try{
+      let res;
+      if(editingCatalogoId){
+        res = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_itens?id=eq.${editingCatalogoId}`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(payload) });
+      } else {
+        res = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_itens`, { method:'POST', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(Object.assign({empresa_id:empresaId}, payload)) });
+      }
+      if(!res.ok) throw new Error('falhou');
+      showScreen('catalogo');
+    }catch(e){ alert('Não deu pra salvar agora.'); }
+  }
+  async function excluirCatalogo(id){
+    if(!confirm('Excluir esse item do catálogo?')) return;
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_itens?id=eq.${id}`, { method:'DELETE', headers: authHeaders() });
+      if(!res.ok) throw new Error('falhou');
+      carregarCatalogoLista();
+    }catch(e){ alert('Não deu pra excluir agora.'); }
+  }
+  async function popularCatalogoSelect(){
+    await fetchCatalogo();
+    const sel = document.getElementById('catalogoSelect');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Selecionar item do catálogo...</option>' + catalogoCache.map(c=>`<option value="${c.id}">${c.nome} — R$ ${Number(c.valor_unitario).toLocaleString('pt-BR',{minimumFractionDigits:2})}</option>`).join('');
+  }
+  function adicionarDoCatalogo(){
+    const sel = document.getElementById('catalogoSelect');
+    const id = sel.value;
+    if(!id) return;
+    const item = catalogoCache.find(c=>c.id===id);
+    if(item){
+      items.push({desc:item.nome, tipo:item.tipo, qtd:1, valorUnit:Number(item.valor_unitario)});
+      renderItems(); recalcTotal();
+    }
+    sel.value = '';
+  }
+
   // ===================== NOVO ORÇAMENTO =====================
   function openNewQuote(){ resetForm(); showScreen('novo'); }
 
@@ -916,10 +1118,9 @@
     recalcTotal();
   }
 
-  const tipoItemLabel = {servico:'Serviço', mao_obra:'Mão de obra', material:'Peça'};
   function renderItems(){
     const list = document.getElementById('itemsList');
-    if(!items.length){ list.innerHTML = '<div class="hint" style="margin-bottom:10px;">Nenhum item ainda — adicione mão de obra, serviço ou peças.</div>'; return; }
+    if(!items.length){ list.innerHTML = '<div class="hint" style="margin-bottom:10px;">Nenhum item ainda — adicione do catálogo ou manualmente.</div>'; return; }
     list.innerHTML = items.map((it,i)=>`
       <div class="item-row">
         <div class="item-row-top">
@@ -1077,6 +1278,17 @@
     window._pendingCliente = { nome: cliente, telefone: clienteTelefone, documento: clienteDocumento };
     window._pendingPayload = payload;
     showScreen('doc');
+  }
+
+  function baixarPdf(){
+    const nomeCliente = (window._pendingCliente && window._pendingCliente.nome) ? window._pendingCliente.nome : 'cliente';
+    const nomeArquivo = `orcamento-${nomeCliente.replace(/[^a-zA-Z0-9]+/g,'-').toLowerCase()}.pdf`;
+    html2pdf().from(document.getElementById('docContent')).set({
+      margin: 10,
+      filename: nomeArquivo,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).save();
   }
 
   async function encontrarOuCriarCliente(nome, telefone, documento){
