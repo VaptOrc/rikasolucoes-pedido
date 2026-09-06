@@ -314,8 +314,12 @@
         <input type="text" id="clNome" placeholder="Nome do cliente ou razão social">
       </div>
       <div class="field-group">
-        <label class="label">Telefone (WhatsApp)</label>
+        <label class="label">Telefone (WhatsApp) — obrigatório</label>
         <input type="text" id="clTelefone" placeholder="Ex.: 85999998888">
+      </div>
+      <div class="field-group">
+        <label class="label">E-mail</label>
+        <input type="text" id="clEmail" placeholder="email@exemplo.com">
       </div>
       <div class="field-group">
         <label class="label">Endereço</label>
@@ -352,8 +356,7 @@
       <div class="field-group">
         <label class="label">Tipo</label>
         <div class="segmented">
-          <button type="button" class="active" id="catTipoMaoObraBtn" onclick="setCatTipo('mao_obra')">Mão de obra</button>
-          <button type="button" id="catTipoServicoBtn" onclick="setCatTipo('servico')">Serviço</button>
+          <button type="button" class="active" id="catTipoServicoBtn" onclick="setCatTipo('servico')">Serviço</button>
           <button type="button" id="catTipoMaterialBtn" onclick="setCatTipo('material')">Peça</button>
         </div>
       </div>
@@ -429,6 +432,13 @@
       </div>
 
       <div class="field-group">
+        <label class="label">Cliente já cadastrado</label>
+        <select id="clienteExistenteSelect" onchange="preencherClienteExistente()">
+          <option value="">Novo cliente...</option>
+        </select>
+        <div class="hint">Escolhendo aqui, preenche documento e telefone automaticamente.</div>
+      </div>
+      <div class="field-group">
         <label class="label">CNPJ ou CPF do cliente</label>
         <input type="text" id="fClienteDocumento" placeholder="Só números" oninput="onDocumentoOrcamentoInput()">
         <div class="hint" id="fClienteDocumentoHint">Se for CNPJ, preenchemos o nome automaticamente.</div>
@@ -438,7 +448,7 @@
         <input type="text" id="fCliente" placeholder="Nome do cliente ou empresa">
       </div>
       <div class="field-group">
-        <label class="label">Telefone do cliente (WhatsApp)</label>
+        <label class="label">Telefone do cliente (WhatsApp) — obrigatório</label>
         <input type="text" id="fClienteTelefone" placeholder="Ex.: 85999998888">
         <div class="hint">É pra esse número que o orçamento é enviado automaticamente.</div>
       </div>
@@ -570,11 +580,12 @@
   let clientesCache = [];
   let catalogoCache = [];
   let editingCatalogoId = null;
-  let catTipoAtual = 'mao_obra';
+  let catTipoAtual = 'servico';
+  let clientesSelectCache = [];
   const statusLabel = {pendente:'Pendente', aprovado:'Aprovado', andamento:'Em andamento', aguardando_pagamento:'Aguardando pagamento', concluido:'Concluído', garantia:'Garantia', cancelado:'Cancelado'};
   const statusOrdem = ['pendente','aguardando_aprovacao','aprovado','andamento','aguardando_pagamento','concluido','garantia','cancelado'];
   const statusConfirmados = ['aprovado','andamento','aguardando_pagamento','concluido','garantia'];
-  const tipoItemLabel = {servico:'Serviço', mao_obra:'Mão de obra', material:'Peça'};
+  const tipoItemLabel = {servico:'Serviço', material:'Peça'};
 
   function authHeaders(extra){
     return Object.assign({
@@ -601,7 +612,7 @@
     if(name==='empresa') preencherFormEmpresa();
     if(name==='financeiro') carregarFinanceiro();
     if(name==='catalogo') carregarCatalogoLista();
-    if(name==='novo') popularCatalogoSelect();
+    if(name==='novo'){ popularCatalogoSelect(); popularClienteSelect(); }
   }
   function goBack(){
     history.pop();
@@ -910,6 +921,7 @@
     document.getElementById('clDocumento').value = '';
     document.getElementById('clNome').value = '';
     document.getElementById('clTelefone').value = '';
+    document.getElementById('clEmail').value = '';
     document.getElementById('clEndereco').value = '';
     document.getElementById('clDocumentoHint').textContent = 'Se for CNPJ, a gente já busca o nome da empresa pra você.';
     document.getElementById('salvarClienteBtn').textContent = 'Salvar cliente';
@@ -922,6 +934,7 @@
     document.getElementById('clDocumento').value = c.documento || '';
     document.getElementById('clNome').value = c.nome || '';
     document.getElementById('clTelefone').value = c.telefone || '';
+    document.getElementById('clEmail').value = c.email || '';
     document.getElementById('clEndereco').value = c.endereco || '';
     document.getElementById('clDocumentoHint').textContent = '';
     document.getElementById('salvarClienteBtn').textContent = 'Salvar alterações';
@@ -931,10 +944,12 @@
     const payload = {
       nome: document.getElementById('clNome').value,
       telefone: document.getElementById('clTelefone').value,
+      email: document.getElementById('clEmail').value,
       documento: document.getElementById('clDocumento').value,
       endereco: document.getElementById('clEndereco').value
     };
     if(!payload.nome){ alert('Preenche o nome do cliente.'); return; }
+    if(!payload.telefone){ alert('Telefone é obrigatório.'); return; }
     try{
       let res;
       if(editingClienteId){
@@ -953,6 +968,26 @@
       if(!res.ok) throw new Error('falhou');
       carregarClientes();
     }catch(e){ alert('Não deu pra excluir — capaz de já ter orçamento vinculado a esse cliente.'); }
+  }
+
+  async function popularClienteSelect(){
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&select=id,nome,telefone,documento&order=nome.asc`, { headers: authHeaders() });
+      clientesSelectCache = res.ok ? await res.json() : [];
+    }catch(e){ clientesSelectCache = []; }
+    const sel = document.getElementById('clienteExistenteSelect');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Novo cliente...</option>' + clientesSelectCache.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  }
+  function preencherClienteExistente(){
+    const id = document.getElementById('clienteExistenteSelect').value;
+    if(!id) return;
+    const c = clientesSelectCache.find(x=>x.id===id);
+    if(c){
+      document.getElementById('fCliente').value = c.nome || '';
+      document.getElementById('fClienteDocumento').value = c.documento || '';
+      document.getElementById('fClienteTelefone').value = c.telefone || '';
+    }
   }
 
   // ===================== FINANCEIRO =====================
@@ -1018,7 +1053,6 @@
   }
   function setCatTipo(tipo){
     catTipoAtual = tipo;
-    document.getElementById('catTipoMaoObraBtn').classList.toggle('active', tipo==='mao_obra');
     document.getElementById('catTipoServicoBtn').classList.toggle('active', tipo==='servico');
     document.getElementById('catTipoMaterialBtn').classList.toggle('active', tipo==='material');
   }
@@ -1026,7 +1060,7 @@
     editingCatalogoId = null;
     document.getElementById('catNome').value = '';
     document.getElementById('catValor').value = '';
-    setCatTipo('mao_obra');
+    setCatTipo('servico');
     document.getElementById('salvarCatalogoBtn').textContent = 'Salvar item';
     showScreen('catalogo-form');
   }
@@ -1128,7 +1162,6 @@
           <button class="item-remove" onclick="removeItem(${i})">×</button>
         </div>
         <div class="segmented small">
-          <button type="button" class="${it.tipo==='mao_obra'?'active':''}" onclick="updateItem(${i},'tipo','mao_obra')">Mão de obra</button>
           <button type="button" class="${it.tipo==='servico'?'active':''}" onclick="updateItem(${i},'tipo','servico')">Serviço</button>
           <button type="button" class="${it.tipo==='material'?'active':''}" onclick="updateItem(${i},'tipo','material')">Peça</button>
         </div>
@@ -1144,7 +1177,7 @@
     if(field==='qtd'||field==='valorUnit') val = parseFloat(val)||0;
     items[i][field]=val; renderItems(); recalcTotal();
   }
-  function addItem(){ items.push({desc:'',tipo:'mao_obra',qtd:1,valorUnit:0}); renderItems(); recalcTotal(); }
+  function addItem(){ items.push({desc:'',tipo:'servico',qtd:1,valorUnit:0}); renderItems(); recalcTotal(); }
   function removeItem(i){ items.splice(i,1); renderItems(); recalcTotal(); }
 
   function calcTotal(){
@@ -1163,6 +1196,7 @@
   }
 
   function resetForm(){
+    document.getElementById('clienteExistenteSelect').value = '';
     document.getElementById('fClienteDocumento').value = '';
     document.getElementById('fClienteDocumentoHint').textContent = 'Se for CNPJ, preenchemos o nome automaticamente.';
     document.getElementById('fCliente').value = '';
@@ -1171,13 +1205,14 @@
     ['fCargaHoraria','fGarantiaMinima','fValorPacote','fValorHoraCons','fHorasEstCons','fValorProjeto'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('fValidade').value = 15;
     document.getElementById('fTextoPadrao').value = company.texto_padrao || '';
-    items = [{desc:'',tipo:'mao_obra',qtd:1,valorUnit:0}];
+    items = [{desc:'',tipo:'servico',qtd:1,valorUnit:0}];
     setModo('comercio'); setModeloContrato('banco'); renderItems(); recalcTotal();
   }
 
   function gerarDocumento(){
     const cliente = document.getElementById('fCliente').value || 'Cliente';
     const clienteTelefone = document.getElementById('fClienteTelefone').value.trim();
+    if(!clienteTelefone){ alert('Telefone do cliente é obrigatório (agora é obrigatório no cadastro, e é pra ele que o orçamento é enviado).'); return; }
     const clienteDocumento = document.getElementById('fClienteDocumento').value.trim();
     const textoPadrao = document.getElementById('fTextoPadrao').value;
     const pagamento = document.getElementById('fPagamento').value;
