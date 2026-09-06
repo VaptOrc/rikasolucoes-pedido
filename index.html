@@ -369,10 +369,25 @@
 
     <!-- RELATÓRIOS -->
     <section class="screen" id="screen-relatorios">
-      <div class="simple-item" style="cursor:default;"><div>Orçamentos por status<br><span class="sub">pendente, aprovado, concluído...</span></div><span>→</span></div>
-      <div class="simple-item" style="cursor:default;"><div>Comércio × Consultoria<br><span class="sub">quanto vem de cada modelo</span></div><span>→</span></div>
-      <div class="simple-item" style="cursor:default;"><div>Consumo de banco de horas<br><span class="sub">quanto cada cliente já usou</span></div><span>→</span></div>
-      <div class="empty-state"><p>Esses relatórios ainda são placeholders — o fluxo de caixa real já está em Financeiro.</p></div>
+      <div class="simple-item" onclick="abrirRelatorioStatus()"><div>Orçamentos por status<br><span class="sub">pendente, aprovado, concluído...</span></div><span>→</span></div>
+      <div class="simple-item" onclick="abrirRelatorioCategoria()"><div>Comércio × Consultoria<br><span class="sub">quanto vem de cada modelo</span></div><span>→</span></div>
+      <div class="simple-item" onclick="abrirRelatorioBancoHoras()"><div>Banco de horas contratado<br><span class="sub">carga e garantia mínima por cliente</span></div><span>→</span></div>
+    </section>
+
+    <!-- RELATÓRIO: POR STATUS -->
+    <section class="screen" id="screen-relatorio-status">
+      <div id="relStatusConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
+    </section>
+
+    <!-- RELATÓRIO: CATEGORIA -->
+    <section class="screen" id="screen-relatorio-categoria">
+      <div id="relCategoriaConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
+    </section>
+
+    <!-- RELATÓRIO: BANCO DE HORAS -->
+    <section class="screen" id="screen-relatorio-banco-horas">
+      <div class="empty-state" style="padding:20px 4px;text-align:left;"><p>Mostra o que foi contratado. O app ainda não registra quantas horas já foram usadas — isso é um próximo passo.</p></div>
+      <div id="relBancoHorasConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
     </section>
 
     <!-- MINHA EMPRESA -->
@@ -564,6 +579,9 @@
     catalogo: ['Materiais & Serviços', 'itens prontos pra usar no orçamento'],
     'catalogo-form': ['Item do catálogo', 'nome, tipo e valor'],
     relatorios: ['Relatórios', 'o que os números dizem'],
+    'relatorio-status': ['Por status', 'quantidade e valor em cada etapa'],
+    'relatorio-categoria': ['Comércio × Consultoria', 'quanto vem de cada modelo'],
+    'relatorio-banco-horas': ['Banco de horas', 'contratos ativos por cliente'],
     empresa: ['Minha empresa', 'dados que aparecem no orçamento'],
     novo: ['Novo orçamento', 'preencha e gere o documento'],
     doc: ['Documento', 'pronto para enviar ao cliente'],
@@ -1027,6 +1045,69 @@
     }catch(e){
       document.getElementById('finLista').innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>';
     }
+  }
+
+  // ===================== RELATÓRIOS =====================
+  async function abrirRelatorioStatus(){
+    showScreen('relatorio-status');
+    const el = document.getElementById('relStatusConteudo');
+    el.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=status,valor_total`, { headers: authHeaders() });
+      const rows = res.ok ? await res.json() : [];
+      const porStatus = {};
+      rows.forEach(r=>{
+        if(!porStatus[r.status]) porStatus[r.status] = { qtd:0, total:0 };
+        porStatus[r.status].qtd += 1;
+        porStatus[r.status].total += Number(r.valor_total||0);
+      });
+      const linhas = statusOrdem.filter(s=>porStatus[s]).map(s=>`
+        <div class="simple-item" style="cursor:default;">
+          <div>${statusLabel[s]}<br><span class="sub">${porStatus[s].qtd} orçamento(s)</span></div>
+          <span class="valor">R$ ${porStatus[s].total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+        </div>
+      `).join('');
+      el.innerHTML = linhas || '<div class="empty-state"><p>Nenhum orçamento ainda.</p></div>';
+    }catch(e){ el.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
+  }
+
+  async function abrirRelatorioCategoria(){
+    showScreen('relatorio-categoria');
+    const el = document.getElementById('relCategoriaConteudo');
+    el.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=categoria,valor_total`, { headers: authHeaders() });
+      const rows = res.ok ? await res.json() : [];
+      const grupos = { comercio: {qtd:0,total:0}, consultoria: {qtd:0,total:0} };
+      rows.forEach(r=>{
+        if(!grupos[r.categoria]) grupos[r.categoria] = {qtd:0,total:0};
+        grupos[r.categoria].qtd += 1;
+        grupos[r.categoria].total += Number(r.valor_total||0);
+      });
+      const nomes = { comercio:'Comércio & Serviço', consultoria:'Consultoria & Suporte' };
+      el.innerHTML = ['comercio','consultoria'].map(k=>`
+        <div class="simple-item" style="cursor:default;">
+          <div>${nomes[k]}<br><span class="sub">${grupos[k].qtd} orçamento(s)</span></div>
+          <span class="valor">R$ ${grupos[k].total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+        </div>
+      `).join('');
+    }catch(e){ el.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
+  }
+
+  async function abrirRelatorioBancoHoras(){
+    showScreen('relatorio-banco-horas');
+    const el = document.getElementById('relBancoHorasConteudo');
+    el.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&modelo_contrato=eq.banco_horas&select=numero,status,carga_horaria_contratada,garantia_minima_horas,valor_pacote,clientes(nome)&order=created_at.desc`, { headers: authHeaders() });
+      const rows = res.ok ? await res.json() : [];
+      el.innerHTML = rows.length ? rows.map(r=>`
+        <div class="simple-item" style="cursor:default;">
+          <div>${r.clientes ? r.clientes.nome : '—'}<br><span class="sub">ORÇ-${String(r.numero).padStart(3,'0')} · ${r.carga_horaria_contratada||'—'}h contratadas${r.garantia_minima_horas ? ' · garantia '+r.garantia_minima_horas+'h' : ''}</span></div>
+          <span class="badge status-${r.status}">${statusLabel[r.status]||r.status}</span>
+        </div>
+      `).join('') : '<div class="empty-state"><p>Nenhum contrato de banco de horas ainda.</p></div>';
+    }catch(e){ el.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
   }
 
   // ===================== MATERIAIS & SERVIÇOS (catálogo) =====================
