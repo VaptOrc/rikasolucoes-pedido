@@ -87,4 +87,771 @@
     width:100%;font-family:'Inter',sans-serif;font-size:13.5px;padding:10px 11px;border-radius:8px;border:1px solid var(--line);background:var(--white);color:var(--ink);
   }
   textarea{resize:vertical;min-height:70px;line-height:1.5;}
-  input:focus, textarea:focus,
+  input:focus, textarea:focus, select:focus{outline:2px solid var(--blueprint);outline-offset:1px;}
+
+  .segmented{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;}
+  .segmented button{flex:1;padding:10px;border:none;background:var(--white);font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;color:var(--slate);cursor:pointer;}
+  .segmented button.active{background:var(--ink);color:var(--white);}
+  .segmented.small button{padding:7px 6px;font-size:11px;}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .section-divider{border:none;border-top:1px solid var(--line);margin:22px 0 18px;}
+  .section-title{font-size:11.5px;font-weight:600;letter-spacing:.3px;color:var(--copper-dark);margin:0 0 12px;}
+
+  .item-row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;}
+  .item-row-top{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+  .item-row-top input{flex:1;}
+  .item-remove{background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;}
+  .item-row-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:center;margin-top:8px;}
+  .item-row-bottom input{padding:8px;font-size:12.5px;}
+  .item-subtotal{font-size:12px;text-align:right;color:var(--ink);font-weight:600;}
+
+  .total-bar{position:sticky;bottom:0;background:var(--paper);border-top:1px solid var(--line);margin:0 -18px;padding:14px 18px;}
+  .total-bar .line{display:flex;justify-content:space-between;font-size:13px;color:var(--slate);margin-bottom:4px;}
+
+  .doc-paper{background:var(--white);border:1px solid var(--line);border-radius:6px;padding:22px 20px;font-size:13px;line-height:1.6;color:#2B2B2B;}
+  .doc-paper .doc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;padding-bottom:14px;border-bottom:2px solid var(--ink);}
+  .doc-paper .doc-head .co{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:var(--ink);}
+  .doc-paper .doc-head img.logo{max-height:40px;display:block;margin-bottom:4px;}
+  .doc-paper .doc-head .co-sub{font-size:11px;color:var(--slate);}
+  .doc-paper .doc-head .meta{text-align:right;font-size:11.5px;color:var(--slate);}
+  .doc-paper .doc-head .meta .num{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);font-weight:500;}
+  .doc-block{margin-bottom:16px;}
+  .doc-block h4{margin:0 0 6px;font-size:12px;letter-spacing:.2px;color:var(--copper-dark);font-family:'Inter',sans-serif;font-weight:700;}
+  .doc-block p{margin:0 0 6px;white-space:pre-line;}
+  .doc-total-row{display:flex;justify-content:space-between;padding-top:10px;margin-top:4px;border-top:1px solid var(--line);font-weight:700;font-size:14.5px;color:var(--ink);}
+  .doc-actions{display:flex;gap:10px;margin-top:16px;}
+  .doc-actions button{flex:1;}
+  .btn-ghost{background:var(--white);border:1px solid var(--line);color:var(--ink);padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;}
+  .sig-img{max-height:46px;display:block;margin:6px 0;}
+
+  nav.tabbar{position:absolute;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:8px 4px 10px;}
+  nav.tabbar button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--slate);padding:4px 0;}
+  nav.tabbar button svg{width:21px;height:21px;}
+  nav.tabbar button .label{font-size:10.5px;font-weight:500;}
+  nav.tabbar button.active{color:var(--ink);}
+  nav.tabbar button.active .label{font-weight:600;}
+
+  #screen-login{padding-top:40px;}
+  #screen-login h2{text-align:center;margin-bottom:24px;}
+  .login-toggle{display:flex;gap:8px;margin-top:14px;}
+  .login-toggle button{flex:1;}
+  .login-msg{text-align:center;margin-top:14px;font-size:12.5px;color:var(--slate);min-height:16px;}
+
+  .logout-link{display:block;text-align:center;margin-top:22px;font-size:12.5px;color:var(--slate);cursor:pointer;text-decoration:underline;}
+
+  ::-webkit-scrollbar{width:0;height:0;}
+</style>
+</head>
+<body>
+
+<div id="frame">
+  <header>
+    <div class="top-row">
+      <button class="back" id="backBtn" onclick="goBack()" style="display:none;">←</button>
+      <div>
+        <h1 id="screenTitle">VaptOrc</h1>
+        <div class="subtitle" id="screenSubtitle">monte o orçamento certo, rapidinho</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- LOGIN -->
+    <section class="screen active" id="screen-login">
+      <h2>VaptOrc</h2>
+      <div class="field-group">
+        <label class="label">E-mail</label>
+        <input type="email" id="loginEmail" placeholder="seuemail@exemplo.com">
+      </div>
+      <div class="field-group">
+        <label class="label">Senha</label>
+        <input type="password" id="loginSenha" placeholder="Senha">
+      </div>
+      <button class="cta-full" id="loginBtn" onclick="fazerLogin()">Entrar</button>
+      <div class="login-toggle">
+        <button class="btn-ghost" style="flex:1;" onclick="fazerCadastro()">Criar conta</button>
+      </div>
+      <div class="login-msg" id="loginMsg"></div>
+    </section>
+
+    <!-- HOME -->
+    <section class="screen" id="screen-home">
+      <div class="home-hero">
+        <p class="eyebrow" id="homeEyebrow"></p>
+        <h2>Bom te ver de volta</h2>
+        <p id="homeResumo">Carregando seus orçamentos...</p>
+      </div>
+      <div class="grid">
+        <div class="tile" onclick="showScreen('orcamentos')">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6a1 1 0 0 1 1 1v1h1a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1V4a1 1 0 0 1 1-1Z"/><path d="M9 11h6M9 15h4"/></svg></div>
+          <div class="name">Orçamentos</div>
+          <div class="desc">Criar, enviar e acompanhar</div>
+        </div>
+        <div class="tile" onclick="showScreen('clientes')">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c2 .2 3.8 1.9 4.3 4.6"/></svg></div>
+          <div class="name">Clientes</div>
+          <div class="desc">Histórico e contato</div>
+        </div>
+        <div class="tile" onclick="showScreen('relatorios')">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+          <div class="name">Relatórios</div>
+          <div class="desc">Fechamento e desempenho</div>
+        </div>
+        <div class="tile" onclick="showScreen('empresa')">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 8h2M8 12h2M8 16h2M14 8h2M14 12h2"/></svg></div>
+          <div class="name">Minha empresa</div>
+          <div class="desc">Dados que vão no orçamento</div>
+        </div>
+      </div>
+      <button class="cta-full" onclick="openNewQuote()">+ Novo orçamento</button>
+    </section>
+
+    <!-- ORÇAMENTOS -->
+    <section class="screen" id="screen-orcamentos">
+      <div class="filters" id="filterChips"></div>
+      <div id="quoteList"><div class="empty-state"><p>Carregando...</p></div></div>
+      <button class="cta-full" onclick="openNewQuote()">+ Novo orçamento</button>
+    </section>
+
+    <!-- CLIENTES -->
+    <section class="screen" id="screen-clientes">
+      <div id="clientesList"><div class="empty-state"><p>Carregando...</p></div></div>
+    </section>
+
+    <!-- RELATÓRIOS -->
+    <section class="screen" id="screen-relatorios">
+      <div class="simple-item"><div>Orçamentos por status<br><span class="sub">pendente, aprovado, concluído...</span></div><span>→</span></div>
+      <div class="simple-item"><div>Faturamento por período<br><span class="sub">o quanto foi fechado por mês</span></div><span>→</span></div>
+      <div class="simple-item"><div>Comércio × Consultoria<br><span class="sub">quanto vem de cada modelo</span></div><span>→</span></div>
+      <div class="simple-item"><div>Consumo de banco de horas<br><span class="sub">quanto cada cliente já usou</span></div><span>→</span></div>
+      <div class="empty-state"><p>Esses relatórios ainda são placeholders — próxima etapa é calcular a partir dos orçamentos reais.</p></div>
+    </section>
+
+    <!-- MINHA EMPRESA -->
+    <section class="screen" id="screen-empresa">
+      <div class="field-group">
+        <label class="label">Logotipo (JPG ou PNG)</label>
+        <input type="file" id="cLogoInput" accept="image/png, image/jpeg" onchange="previewLogo(event)">
+        <img id="logoPreview" style="display:none;max-height:64px;margin-top:10px;">
+        <div class="hint">Aparece no topo de todo orçamento, no lugar do nome em texto.</div>
+      </div>
+      <div class="field-group">
+        <label class="label">Nome da empresa</label>
+        <input type="text" id="cNome">
+      </div>
+      <div class="two-col">
+        <div class="field-group"><label class="label">CNPJ</label><input type="text" id="cCnpj"></div>
+        <div class="field-group"><label class="label">Telefone</label><input type="text" id="cTelefone"></div>
+      </div>
+      <div class="field-group"><label class="label">E-mail</label><input type="text" id="cEmail"></div>
+      <hr class="section-divider">
+      <p class="section-title">TEXTO PADRÃO DA EMPRESA</p>
+      <div class="field-group">
+        <textarea id="cTexto" style="min-height:130px;"></textarea>
+        <div class="hint">Esse texto abre todo orçamento gerado, nos dois modelos.</div>
+      </div>
+      <hr class="section-divider">
+      <p class="section-title">ASSINATURA</p>
+      <div class="field-group">
+        <label class="label">Imagem da assinatura (JPG ou PNG)</label>
+        <input type="file" id="cAssinaturaInput" accept="image/png, image/jpeg" onchange="previewAssinatura(event)">
+        <img id="assinaturaPreview" style="display:none;max-height:50px;margin-top:10px;">
+        <div class="hint">Aparece no rodapé de todo orçamento, acima do nome da empresa.</div>
+      </div>
+      <button class="cta-full" onclick="salvarEmpresa()">Salvar dados da empresa</button>
+      <div class="logout-link" onclick="logout()">Sair da conta</div>
+    </section>
+
+    <!-- NOVO ORÇAMENTO -->
+    <section class="screen" id="screen-novo">
+      <div class="field-group">
+        <label class="label">Modelo de orçamento</label>
+        <div class="segmented">
+          <button type="button" class="active" id="modoComercioBtn" onclick="setModo('comercio')">Comércio &amp; Serviço</button>
+          <button type="button" id="modoConsultoriaBtn" onclick="setModo('consultoria')">Consultoria &amp; Suporte</button>
+        </div>
+        <div class="hint" id="modoHint">Para quem cobra serviço + peças, como um eletricista.</div>
+      </div>
+
+      <div class="field-group">
+        <label class="label">Cliente</label>
+        <input type="text" id="fCliente" placeholder="Nome do cliente ou empresa">
+      </div>
+      <div class="field-group">
+        <label class="label">Telefone do cliente (WhatsApp)</label>
+        <input type="text" id="fClienteTelefone" placeholder="Ex.: 85999998888">
+        <div class="hint">É pra esse número que o orçamento é enviado automaticamente.</div>
+      </div>
+
+      <div id="blocoComercio">
+        <hr class="section-divider">
+        <p class="section-title">ITENS DO ORÇAMENTO</p>
+        <div id="itemsList"></div>
+        <button class="btn-ghost" style="width:100%;margin-bottom:6px;" onclick="addItem()">+ Adicionar item</button>
+      </div>
+
+      <div id="blocoConsultoria" style="display:none;">
+        <hr class="section-divider">
+        <p class="section-title">ESCOPO DOS SERVIÇOS</p>
+        <div class="field-group"><textarea id="fEscopo" placeholder="Ex.: Suporte técnico e funcional do módulo X."></textarea></div>
+        <p class="section-title">MODELO DE CONTRATO</p>
+        <div class="field-group">
+          <div class="segmented">
+            <button type="button" class="active" id="modeloBancoBtn" onclick="setModeloContrato('banco')">Banco de horas</button>
+            <button type="button" id="modeloAvulsaBtn" onclick="setModeloContrato('avulsa')">Horas avulsa</button>
+            <button type="button" id="modeloProjetoBtn" onclick="setModeloContrato('projeto')">Projeto fechado</button>
+          </div>
+        </div>
+        <div class="field-group" id="grupoBanco">
+          <div class="two-col">
+            <input type="number" id="fCargaHoraria" placeholder="Carga horária contratada (h)" min="0" oninput="recalcTotal()">
+            <input type="number" id="fGarantiaMinima" placeholder="Garantia mínima mensal (h)" min="0">
+          </div>
+          <div style="margin-top:10px;"><input type="number" id="fValorPacote" placeholder="Valor total do pacote (R$)" min="0" oninput="recalcTotal()"></div>
+        </div>
+        <div class="field-group" id="grupoAvulsa" style="display:none;">
+          <div class="two-col">
+            <input type="number" id="fValorHoraCons" placeholder="Valor por hora (R$)" min="0" oninput="recalcTotal()">
+            <input type="number" id="fHorasEstCons" placeholder="Horas estimadas (opcional)" min="0" oninput="recalcTotal()">
+          </div>
+        </div>
+        <div class="field-group" id="grupoProjeto" style="display:none;">
+          <input type="number" id="fValorProjeto" placeholder="Valor total do projeto (R$)" min="0" oninput="recalcTotal()">
+        </div>
+        <div class="field-group">
+          <label class="label">Validade da proposta (dias)</label>
+          <input type="number" id="fValidade" value="15" min="1">
+        </div>
+      </div>
+
+      <hr class="section-divider">
+      <p class="section-title">TEXTO DE ABERTURA</p>
+      <div class="field-group"><textarea id="fTextoPadrao"></textarea></div>
+
+      <hr class="section-divider">
+      <p class="section-title">CONDIÇÕES</p>
+      <div class="field-group"><label class="label">Condições de pagamento</label><textarea id="fPagamento"></textarea></div>
+      <div class="field-group"><label class="label">Obrigações do cliente</label><textarea id="fObrigCliente"></textarea></div>
+      <div class="field-group"><label class="label">Obrigações da empresa</label><textarea id="fObrigEmpresa"></textarea></div>
+
+      <div class="total-bar">
+        <div class="line"><span>Total estimado</span><span id="totalPreview" class="mono">R$ 0,00</span></div>
+        <button class="cta-full" style="margin-top:6px;" onclick="gerarDocumento()">Gerar documento</button>
+      </div>
+    </section>
+
+    <!-- DOCUMENTO GERADO -->
+    <section class="screen" id="screen-doc">
+      <div class="doc-paper" id="docContent"></div>
+      <div class="doc-actions">
+        <button class="btn-ghost" onclick="showScreen('novo')">Editar</button>
+        <button class="cta-full" id="salvarOrcBtn" onclick="salvarOrcamento()">Salvar e enviar</button>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" id="tabbar" style="display:none;">
+    <button class="tab active" data-tab="home" onclick="showScreen('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-9"/></svg>
+      <span class="label">Início</span>
+    </button>
+    <button class="tab" data-tab="orcamentos" onclick="showScreen('orcamentos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6a1 1 0 0 1 1 1v1h1a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1V4a1 1 0 0 1 1-1Z"/><path d="M9 11h6M9 15h4"/></svg>
+      <span class="label">Orçamentos</span>
+    </button>
+    <button class="tab" data-tab="clientes" onclick="showScreen('clientes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c2 .2 3.8 1.9 4.3 4.6"/></svg>
+      <span class="label">Clientes</span>
+    </button>
+    <button class="tab" data-tab="relatorios" onclick="showScreen('relatorios')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <span class="label">Relatórios</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://xynqyybugkkdcxodbmcs.supabase.co';
+  const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh5bnF5eWJ1Z2trZGN4b2RibWNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3MDg1MDEsImV4cCI6MjEwNDI4NDUwMX0.REgVgo394-OpHb3OyIWUZxNq0t4I8y6Hh70ZZTVcZ2E';
+
+  const titles = {
+    home: ['VaptOrc', 'monte o orçamento certo, rapidinho'],
+    orcamentos: ['Orçamentos', 'todos os pedidos em um lugar'],
+    clientes: ['Clientes', 'quem já pediu orçamento'],
+    relatorios: ['Relatórios', 'o que os números dizem'],
+    empresa: ['Minha empresa', 'dados que aparecem no orçamento'],
+    novo: ['Novo orçamento', 'preencha e gere o documento'],
+    doc: ['Documento', 'pronto para enviar ao cliente'],
+  };
+  const tabScreens = ['home','orcamentos','clientes','relatorios'];
+  let history = ['login'];
+  let modoAtual = 'comercio';
+  let modeloContratoAtual = 'banco';
+  let items = [];
+  let session = null;
+  let empresaId = null;
+  let company = {};
+  const statusLabel = {pendente:'Pendente', aprovado:'Aprovado', andamento:'Em andamento', aguardando_pagamento:'Aguardando pagamento', concluido:'Concluído', garantia:'Garantia', cancelado:'Cancelado'};
+
+  function authHeaders(extra){
+    return Object.assign({
+      'apikey': ANON_KEY,
+      'Authorization': 'Bearer ' + (session ? session.access_token : ANON_KEY),
+      'Content-Type': 'application/json'
+    }, extra || {});
+  }
+
+  function showScreen(name, push=true){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('screen-'+name).classList.add('active');
+    if(titles[name]){
+      document.getElementById('screenTitle').textContent = titles[name][0];
+      document.getElementById('screenSubtitle').textContent = titles[name][1];
+    }
+    document.getElementById('backBtn').style.display = (name!=='login' && !tabScreens.includes(name)) ? 'inline-block' : 'none';
+    document.getElementById('tabbar').style.display = (name!=='login' && tabScreens.includes(name)) ? 'flex' : 'none';
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+    if(push && history[history.length-1] !== name) history.push(name);
+    if(name==='orcamentos') carregarOrcamentos();
+    if(name==='clientes') carregarClientes();
+    if(name==='empresa') preencherFormEmpresa();
+  }
+  function goBack(){
+    history.pop();
+    const prev = history[history.length-1] || 'home';
+    showScreen(prev, false);
+  }
+
+  // ===================== AUTH =====================
+  function setLoginMsg(msg){ document.getElementById('loginMsg').textContent = msg; }
+
+  async function fazerLogin(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const senha = document.getElementById('loginSenha').value;
+    if(!email || !senha){ setLoginMsg('Preenche e-mail e senha.'); return; }
+    setLoginMsg('Entrando...');
+    try{
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method:'POST', headers:{'apikey':ANON_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({email, password: senha})
+      });
+      const data = await res.json();
+      if(!res.ok){ setLoginMsg(data.error_description || data.msg || 'E-mail ou senha incorretos.'); return; }
+      session = { access_token: data.access_token, user_id: data.user.id };
+      localStorage.setItem('vaptorc_session', JSON.stringify(session));
+      const ok = await carregarContexto();
+      if(ok){ setLoginMsg(''); showScreen('home', false); history=['home']; await atualizarResumoHome(); }
+      else { setLoginMsg('Login certo, mas sua conta ainda não está vinculada a uma empresa. Fala com quem administra o VaptOrc.'); }
+    }catch(e){ setLoginMsg('Não deu pra entrar agora. Tenta de novo.'); }
+  }
+
+  async function fazerCadastro(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const senha = document.getElementById('loginSenha').value;
+    if(!email || !senha){ setLoginMsg('Preenche e-mail e senha.'); return; }
+    setLoginMsg('Criando conta...');
+    try{
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method:'POST', headers:{'apikey':ANON_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({email, password: senha})
+      });
+      const data = await res.json();
+      if(!res.ok){ setLoginMsg(data.error_description || data.msg || 'Não deu pra criar a conta.'); return; }
+      if(data.access_token){
+        setLoginMsg('Conta criada! Avisa quem está configurando o VaptOrc pra vincular sua empresa, depois é só entrar.');
+      } else {
+        setLoginMsg('Conta criada! Verifica seu e-mail pra confirmar antes de entrar.');
+      }
+    }catch(e){ setLoginMsg('Não deu pra criar a conta agora.'); }
+  }
+
+  function logout(){
+    localStorage.removeItem('vaptorc_session');
+    session = null; empresaId = null; company = {};
+    history = ['login'];
+    showScreen('login', false);
+  }
+
+  async function carregarContexto(){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/usuarios?id=eq.${session.user_id}&select=empresa_id`, { headers: authHeaders() });
+    if(!res.ok) return false;
+    const rows = await res.json();
+    if(!rows.length) return false;
+    empresaId = rows[0].empresa_id;
+    const res2 = await fetch(`${SUPABASE_URL}/rest/v1/empresas?id=eq.${empresaId}&select=*`, { headers: authHeaders() });
+    if(!res2.ok) return false;
+    const empresas = await res2.json();
+    if(!empresas.length) return false;
+    company = empresas[0];
+    return true;
+  }
+
+  async function initSession(){
+    const saved = localStorage.getItem('vaptorc_session');
+    if(saved){
+      try{
+        session = JSON.parse(saved);
+        const ok = await carregarContexto();
+        if(ok){ history=['home']; showScreen('home', false); await atualizarResumoHome(); return; }
+      }catch(e){}
+    }
+    showScreen('login', false);
+  }
+
+  async function atualizarResumoHome(){
+    document.getElementById('homeEyebrow').textContent = company.nome || '';
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=status`, { headers: authHeaders() });
+    if(!res.ok) return;
+    const rows = await res.json();
+    const pendentes = rows.filter(r=>r.status==='pendente').length;
+    const andamento = rows.filter(r=>r.status==='andamento').length;
+    document.getElementById('homeResumo').textContent = `${pendentes} orçamento(s) pendente(s) e ${andamento} em andamento.`;
+  }
+
+  // ===================== EMPRESA =====================
+  function preencherFormEmpresa(){
+    document.getElementById('cNome').value = company.nome || '';
+    document.getElementById('cCnpj').value = company.cnpj || '';
+    document.getElementById('cTelefone').value = company.telefone || '';
+    document.getElementById('cEmail').value = company.email || '';
+    document.getElementById('cTexto').value = company.texto_padrao || '';
+    const logoImg = document.getElementById('logoPreview');
+    if(company.logo_url){ logoImg.src = company.logo_url; logoImg.style.display='block'; } else { logoImg.style.display='none'; }
+    const sigImg = document.getElementById('assinaturaPreview');
+    if(company.assinatura_url){ sigImg.src = company.assinatura_url; sigImg.style.display='block'; } else { sigImg.style.display='none'; }
+  }
+
+  async function uploadArquivo(file, tipo){
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase();
+    const path = `${empresaId}/${tipo}.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/empresa-assets/${path}`, {
+      method:'POST',
+      headers:{ 'apikey': ANON_KEY, 'Authorization':'Bearer '+session.access_token, 'Content-Type': file.type, 'x-upsert':'true' },
+      body: file
+    });
+    if(!res.ok) throw new Error('upload falhou');
+    return `${SUPABASE_URL}/storage/v1/object/public/empresa-assets/${path}`;
+  }
+
+  async function previewLogo(event){
+    const file = event.target.files[0]; if(!file) return;
+    try{
+      const url = await uploadArquivo(file, 'logo');
+      company.logo_url = url;
+      const img = document.getElementById('logoPreview'); img.src = url; img.style.display='block';
+    }catch(e){ alert('Não deu pra enviar a imagem agora.'); }
+  }
+  async function previewAssinatura(event){
+    const file = event.target.files[0]; if(!file) return;
+    try{
+      const url = await uploadArquivo(file, 'assinatura');
+      company.assinatura_url = url;
+      const img = document.getElementById('assinaturaPreview'); img.src = url; img.style.display='block';
+    }catch(e){ alert('Não deu pra enviar a imagem agora.'); }
+  }
+
+  async function salvarEmpresa(){
+    const payload = {
+      nome: document.getElementById('cNome').value,
+      cnpj: document.getElementById('cCnpj').value,
+      telefone: document.getElementById('cTelefone').value,
+      email: document.getElementById('cEmail').value,
+      texto_padrao: document.getElementById('cTexto').value,
+      logo_url: company.logo_url || null,
+      assinatura_url: company.assinatura_url || null
+    };
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/empresas?id=eq.${empresaId}`, {
+        method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error('falhou');
+      const rows = await res.json();
+      company = rows[0];
+      showScreen('home');
+      await atualizarResumoHome();
+    }catch(e){ alert('Não deu pra salvar agora. Tenta de novo.'); }
+  }
+
+  // ===================== ORÇAMENTOS (lista) =====================
+  function renderFilters(){
+    const chips = [['todos','Todos'],['pendente','Pendente'],['aprovado','Aprovado'],['andamento','Em andamento'],['concluido','Concluído']];
+    const el = document.getElementById('filterChips');
+    el.innerHTML = chips.map((c,i)=>`<div class="chip ${i===0?'active':''}" onclick="filtrarLista('${c[0]}', this)">${c[1]}</div>`).join('');
+  }
+  let orcamentosCache = [];
+  async function carregarOrcamentos(){
+    if(!document.getElementById('filterChips').innerHTML) renderFilters();
+    const list = document.getElementById('quoteList');
+    list.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=numero,status,categoria,valor_total,clientes(nome)&order=created_at.desc`, { headers: authHeaders() });
+      orcamentosCache = res.ok ? await res.json() : [];
+    }catch(e){ orcamentosCache = []; }
+    renderQuoteList('todos');
+  }
+  function filtrarLista(status, node){
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+    node.classList.add('active');
+    renderQuoteList(status);
+  }
+  function renderQuoteList(filter){
+    const list = document.getElementById('quoteList');
+    const filtered = filter==='todos' ? orcamentosCache : orcamentosCache.filter(q=>q.status===filter);
+    if(!filtered.length){ list.innerHTML = '<div class="empty-state"><p>Nenhum orçamento aqui ainda.</p></div>'; return; }
+    list.innerHTML = filtered.map(q=>`
+      <div class="quote-card status-${q.status}">
+        <div class="row1"><span class="num mono">ORÇ-${String(q.numero).padStart(3,'0')}</span><span class="cat-tag">${q.categoria==='comercio'?'Comércio':'Consultoria'}</span></div>
+        <div class="cliente">${q.clientes ? q.clientes.nome : '—'}</div>
+        <div class="row2"><span class="valor">R$ ${Number(q.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><span class="badge status-${q.status}">${statusLabel[q.status]||q.status}</span></div>
+      </div>
+    `).join('');
+  }
+
+  // ===================== CLIENTES (lista) =====================
+  async function carregarClientes(){
+    const list = document.getElementById('clientesList');
+    list.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&select=nome,telefone&order=created_at.desc`, { headers: authHeaders() });
+      const rows = res.ok ? await res.json() : [];
+      if(!rows.length){ list.innerHTML = '<div class="empty-state"><p>Nenhum cliente ainda — aparece aqui assim que você criar o primeiro orçamento.</p></div>'; return; }
+      list.innerHTML = rows.map(c=>`<div class="simple-item"><div>${c.nome}<br><span class="sub">${c.telefone||'sem telefone'}</span></div></div>`).join('');
+    }catch(e){ list.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
+  }
+
+  // ===================== NOVO ORÇAMENTO =====================
+  function openNewQuote(){ resetForm(); showScreen('novo'); }
+
+  function setModo(modo){
+    modoAtual = modo;
+    document.getElementById('modoComercioBtn').classList.toggle('active', modo==='comercio');
+    document.getElementById('modoConsultoriaBtn').classList.toggle('active', modo==='consultoria');
+    document.getElementById('blocoComercio').style.display = modo==='comercio' ? 'block' : 'none';
+    document.getElementById('blocoConsultoria').style.display = modo==='consultoria' ? 'block' : 'none';
+    document.getElementById('modoHint').textContent = modo==='comercio'
+      ? 'Para quem cobra serviço + peças, como um eletricista.'
+      : 'Para orçamento de suporte de sistema: banco de horas, horas avulsa ou projeto fechado.';
+    if(modo==='comercio'){
+      document.getElementById('fPagamento').value = '50% de sinal na aprovação do orçamento e 50% na conclusão do serviço. Aceitamos Pix, cartão e dinheiro.';
+      document.getElementById('fObrigCliente').value = 'Disponibilizar acesso ao local no horário combinado e fornecer as informações necessárias para a execução do serviço.';
+      document.getElementById('fObrigEmpresa').value = 'Executar o serviço conforme descrito, dentro do prazo combinado, com garantia de 90 dias sobre a mão de obra.';
+    } else {
+      document.getElementById('fPagamento').value = 'O faturamento ocorrerá em até 5 (cinco) dias úteis após o aceite formal desta proposta por e-mail ou assinatura eletrônica.';
+      document.getElementById('fObrigCliente').value = 'Disponibilizar tempestivamente os acessos remotos, as credenciais e as liberações de segurança necessárias nos ambientes de homologação e produção do sistema.';
+      document.getElementById('fObrigEmpresa').value = 'Executar os serviços de consultoria e parametrização solicitados, alinhados previamente com o setor responsável, com profissionais qualificados.';
+    }
+    recalcTotal();
+  }
+  function setModeloContrato(modelo){
+    modeloContratoAtual = modelo;
+    document.getElementById('modeloBancoBtn').classList.toggle('active', modelo==='banco');
+    document.getElementById('modeloAvulsaBtn').classList.toggle('active', modelo==='avulsa');
+    document.getElementById('modeloProjetoBtn').classList.toggle('active', modelo==='projeto');
+    document.getElementById('grupoBanco').style.display = modelo==='banco' ? 'block' : 'none';
+    document.getElementById('grupoAvulsa').style.display = modelo==='avulsa' ? 'block' : 'none';
+    document.getElementById('grupoProjeto').style.display = modelo==='projeto' ? 'block' : 'none';
+    recalcTotal();
+  }
+
+  function renderItems(){
+    const list = document.getElementById('itemsList');
+    if(!items.length){ list.innerHTML = '<div class="hint" style="margin-bottom:10px;">Nenhum item ainda — adicione mão de obra, peças ou ambos.</div>'; return; }
+    list.innerHTML = items.map((it,i)=>`
+      <div class="item-row">
+        <div class="item-row-top">
+          <input type="text" placeholder="Descrição (ex.: Troca de disjuntor)" value="${it.desc}" oninput="updateItem(${i},'desc',this.value)">
+          <button class="item-remove" onclick="removeItem(${i})">×</button>
+        </div>
+        <div class="segmented small">
+          <button type="button" class="${it.tipo==='servico'?'active':''}" onclick="updateItem(${i},'tipo','servico')">Serviço</button>
+          <button type="button" class="${it.tipo==='material'?'active':''}" onclick="updateItem(${i},'tipo','material')">Peça</button>
+        </div>
+        <div class="item-row-bottom">
+          <input type="number" min="0" placeholder="Qtd" value="${it.qtd}" oninput="updateItem(${i},'qtd',this.value)">
+          <input type="number" min="0" placeholder="Valor unit." value="${it.valorUnit}" oninput="updateItem(${i},'valorUnit',this.value)">
+          <span class="item-subtotal mono">R$ ${(it.qtd*it.valorUnit).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+  function updateItem(i, field, val){
+    if(field==='qtd'||field==='valorUnit') val = parseFloat(val)||0;
+    items[i][field]=val; renderItems(); recalcTotal();
+  }
+  function addItem(){ items.push({desc:'',tipo:'servico',qtd:1,valorUnit:0}); renderItems(); recalcTotal(); }
+  function removeItem(i){ items.splice(i,1); renderItems(); recalcTotal(); }
+
+  function calcTotal(){
+    if(modoAtual==='comercio'){ return items.reduce((s,it)=> s + (it.qtd*it.valorUnit), 0); }
+    if(modeloContratoAtual==='banco'){ return parseFloat(document.getElementById('fValorPacote').value)||0; }
+    if(modeloContratoAtual==='avulsa'){
+      const hora = parseFloat(document.getElementById('fValorHoraCons').value)||0;
+      const horas = parseFloat(document.getElementById('fHorasEstCons').value)||0;
+      return horas>0 ? hora*horas : null;
+    }
+    return parseFloat(document.getElementById('fValorProjeto').value)||0;
+  }
+  function recalcTotal(){
+    const t = calcTotal();
+    document.getElementById('totalPreview').textContent = (t===null) ? 'conforme horas' : 'R$ '+t.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  }
+
+  function resetForm(){
+    document.getElementById('fCliente').value = '';
+    document.getElementById('fClienteTelefone').value = '';
+    document.getElementById('fEscopo').value = '';
+    ['fCargaHoraria','fGarantiaMinima','fValorPacote','fValorHoraCons','fHorasEstCons','fValorProjeto'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('fValidade').value = 15;
+    document.getElementById('fTextoPadrao').value = company.texto_padrao || '';
+    items = [{desc:'',tipo:'servico',qtd:1,valorUnit:0}];
+    setModo('comercio'); setModeloContrato('banco'); renderItems(); recalcTotal();
+  }
+
+  function gerarDocumento(){
+    const cliente = document.getElementById('fCliente').value || 'Cliente';
+    const clienteTelefone = document.getElementById('fClienteTelefone').value.trim();
+    const textoPadrao = document.getElementById('fTextoPadrao').value;
+    const pagamento = document.getElementById('fPagamento').value;
+    const obrigCliente = document.getElementById('fObrigCliente').value;
+    const obrigEmpresa = document.getElementById('fObrigEmpresa').value;
+    const total = calcTotal();
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const totalTexto = (total===null) ? 'Conforme horas efetivamente trabalhadas' : 'R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+
+    const head = `
+      <div class="doc-head">
+        <div>
+          ${company.logo_url ? `<img class="logo" src="${company.logo_url}">` : `<div class="co">${company.nome||''}</div>`}
+          <div class="co-sub">${company.cnpj ? 'CNPJ '+company.cnpj : ''}</div>
+        </div>
+        <div class="meta"><div>${hoje}</div></div>
+      </div>`;
+
+    let body = '';
+    let payload = {
+      categoria: modoAtual,
+      texto_abertura: textoPadrao,
+      condicoes_pagamento: pagamento,
+      obrigacoes_cliente: obrigCliente,
+      obrigacoes_empresa: obrigEmpresa,
+      valor_total: total===null?0:total
+    };
+
+    if(modoAtual==='comercio'){
+      body = `
+        <div class="doc-block"><p>${textoPadrao}</p></div>
+        <div class="doc-block"><h4>Cliente</h4><p>${cliente}</p></div>
+        <div class="doc-block">
+          <h4>Itens</h4>
+          ${items.map(it=>`<p>${it.desc||'(sem descrição)'} — ${it.tipo==='servico'?'Serviço':'Peça'} · ${it.qtd} × R$ ${it.valorUnit.toLocaleString('pt-BR',{minimumFractionDigits:2})} = R$ ${(it.qtd*it.valorUnit).toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>`).join('')}
+          <div class="doc-total-row"><span>Total</span><span>${totalTexto}</span></div>
+        </div>
+        <div class="doc-block"><h4>Condições de pagamento</h4><p>${pagamento}</p></div>
+        <div class="doc-block"><h4>Obrigações do cliente</h4><p>${obrigCliente}</p></div>
+        <div class="doc-block"><h4>Obrigações da empresa</h4><p>${obrigEmpresa}</p></div>
+      `;
+    } else {
+      const escopo = document.getElementById('fEscopo').value || '—';
+      const validade = parseInt(document.getElementById('fValidade').value) || 15;
+      const modeloLabel = {banco:'Banco de Horas', avulsa:'Horas Avulsa', projeto:'Projeto Fechado'}[modeloContratoAtual];
+      const modeloDb = {banco:'banco_horas', avulsa:'horas_avulsa', projeto:'projeto_fechado'}[modeloContratoAtual];
+      let detalhe = '';
+      payload.escopo = escopo;
+      payload.validade_dias = validade;
+      payload.modelo_contrato = modeloDb;
+      if(modeloContratoAtual==='banco'){
+        const carga = parseFloat(document.getElementById('fCargaHoraria').value)||null;
+        const garantia = parseFloat(document.getElementById('fGarantiaMinima').value)||null;
+        payload.carga_horaria_contratada = carga; payload.garantia_minima_horas = garantia; payload.valor_pacote = total;
+        detalhe = `<p>Carga horária contratada: ${carga||'—'}h${garantia ? ' · Garantia mínima mensal: '+garantia+'h' : ''}</p>`;
+      } else if(modeloContratoAtual==='avulsa'){
+        const hora = parseFloat(document.getElementById('fValorHoraCons').value)||0;
+        const horas = parseFloat(document.getElementById('fHorasEstCons').value)||null;
+        payload.valor_hora = hora; payload.horas_estimadas = horas;
+        detalhe = `<p>Valor por hora: R$ ${hora.toLocaleString('pt-BR',{minimumFractionDigits:2})}${horas ? ' · Horas estimadas: '+horas+'h' : ''}</p>`;
+      } else {
+        payload.valor_projeto = total;
+        detalhe = `<p>Valor fechado para o escopo descrito acima.</p>`;
+      }
+      body = `
+        <div class="doc-block">
+          <p style="font-weight:700;">PROPOSTA COMERCIAL DE PRESTAÇÃO DE SERVIÇOS</p>
+          <p>À<br>${cliente}</p><p>Prezados(as),</p><p>${textoPadrao}</p>
+        </div>
+        <div class="doc-block"><h4>1. Escopo dos serviços</h4><p>${escopo}</p></div>
+        <div class="doc-block">
+          <h4>2. Responsabilidades e obrigações</h4>
+          <p><strong>2.1 Cabe ao cliente:</strong><br>${obrigCliente}</p>
+          <p style="margin-top:8px;"><strong>2.2 Cabe à ${company.nome}:</strong><br>${obrigEmpresa}</p>
+        </div>
+        <div class="doc-block">
+          <h4>3. Investimento e carga horária</h4>
+          <p><strong>Modelo da proposta:</strong> ${modeloLabel}</p>
+          ${detalhe}
+          <div class="doc-total-row"><span>Valor total</span><span>${totalTexto}</span></div>
+        </div>
+        <div class="doc-block"><h4>4. Condições de pagamento</h4><p>${pagamento}</p></div>
+        <div class="doc-block"><h4>5. Disposições gerais e cronograma</h4><p>Validade da proposta: ${validade} dias corridos a contar da data de emissão.</p></div>
+      `;
+    }
+
+    const signature = `<div class="doc-block" style="margin-top:6px;"><p>Atenciosamente,</p>${company.assinatura_url ? `<img class="sig-img" src="${company.assinatura_url}">` : ''}<p style="font-weight:700;">${company.nome||''}</p></div>`;
+
+    document.getElementById('docContent').innerHTML = head + body + signature;
+    window._pendingCliente = { nome: cliente, telefone: clienteTelefone };
+    window._pendingPayload = payload;
+    showScreen('doc');
+  }
+
+  async function encontrarOuCriarCliente(nome, telefone){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&nome=eq.${encodeURIComponent(nome)}&select=id&limit=1`, { headers: authHeaders() });
+    if(res.ok){
+      const rows = await res.json();
+      if(rows.length) return rows[0].id;
+    }
+    const res2 = await fetch(`${SUPABASE_URL}/rest/v1/clientes`, {
+      method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
+      body: JSON.stringify({ empresa_id: empresaId, nome, telefone })
+    });
+    const rows2 = await res2.json();
+    return rows2[0].id;
+  }
+
+  async function salvarOrcamento(){
+    const btn = document.getElementById('salvarOrcBtn');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try{
+      const clienteId = await encontrarOuCriarCliente(window._pendingCliente.nome, window._pendingCliente.telefone);
+      const payload = Object.assign({ empresa_id: empresaId, cliente_id: clienteId }, window._pendingPayload);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos`, {
+        method:'POST', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error('falhou');
+      const rows = await res.json();
+      const orcamentoId = rows[0].id;
+      if(modoAtual==='comercio'){
+        const itensPayload = items.filter(it=>it.desc).map((it,i)=>({ orcamento_id: orcamentoId, descricao: it.desc, tipo: it.tipo, quantidade: it.qtd, valor_unitario: it.valorUnit, ordem: i }));
+        if(itensPayload.length){
+          await fetch(`${SUPABASE_URL}/rest/v1/itens_orcamento`, { method:'POST', headers: authHeaders(), body: JSON.stringify(itensPayload) });
+        }
+      }
+      btn.disabled = false; btn.textContent = 'Salvar e enviar';
+      showScreen('orcamentos');
+      if(window._pendingCliente.telefone){
+        alert('Orçamento salvo! O envio por WhatsApp acontece automaticamente em instantes.');
+      } else {
+        alert('Orçamento salvo — mas sem telefone do cliente o envio automático por WhatsApp não acontece.');
+      }
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Salvar e enviar';
+      alert('Não deu pra salvar agora. Tenta de novo.');
+    }
+  }
+
+  initSession();
+</script>
+</body>
+</html>
