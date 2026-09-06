@@ -253,6 +253,16 @@
         <div class="hint">Esse texto abre todo orçamento gerado, nos dois modelos.</div>
       </div>
       <hr class="section-divider">
+      <p class="section-title">DADOS PARA PAGAMENTO</p>
+      <div class="field-group">
+        <label class="label">Chave Pix</label>
+        <input type="text" id="cChavePix" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória">
+      </div>
+      <div class="field-group">
+        <label class="label">Dados bancários</label>
+        <textarea id="cDadosBancarios" placeholder="Banco, agência, conta e titular"></textarea>
+      </div>
+      <hr class="section-divider">
       <p class="section-title">ASSINATURA</p>
       <div class="field-group">
         <label class="label">Imagem da assinatura (JPG ou PNG)</label>
@@ -518,6 +528,8 @@
     document.getElementById('cTelefone').value = company.telefone || '';
     document.getElementById('cEmail').value = company.email || '';
     document.getElementById('cTexto').value = company.texto_padrao || '';
+    document.getElementById('cChavePix').value = company.chave_pix || '';
+    document.getElementById('cDadosBancarios').value = company.dados_bancarios || '';
     const logoImg = document.getElementById('logoPreview');
     if(company.logo_url){ logoImg.src = company.logo_url; logoImg.style.display='block'; } else { logoImg.style.display='none'; }
     const sigImg = document.getElementById('assinaturaPreview');
@@ -560,6 +572,8 @@
       telefone: document.getElementById('cTelefone').value,
       email: document.getElementById('cEmail').value,
       texto_padrao: document.getElementById('cTexto').value,
+      chave_pix: document.getElementById('cChavePix').value,
+      dados_bancarios: document.getElementById('cDadosBancarios').value,
       logo_url: company.logo_url || null,
       assinatura_url: company.assinatura_url || null
     };
@@ -731,6 +745,12 @@
       </div>`;
 
     let body = '';
+    const dadosPagamento = (company.chave_pix || company.dados_bancarios) ? `
+      <div class="doc-block">
+        <h4>Dados para pagamento</h4>
+        ${company.chave_pix ? `<p><strong>Chave Pix:</strong> ${company.chave_pix}</p>` : ''}
+        ${company.dados_bancarios ? `<p><strong>Dados bancários:</strong> ${company.dados_bancarios}</p>` : ''}
+      </div>` : '';
     let payload = {
       categoria: modoAtual,
       texto_abertura: textoPadrao,
@@ -750,6 +770,7 @@
           <div class="doc-total-row"><span>Total</span><span>${totalTexto}</span></div>
         </div>
         <div class="doc-block"><h4>Condições de pagamento</h4><p>${pagamento}</p></div>
+        ${dadosPagamento}
         <div class="doc-block"><h4>Obrigações do cliente</h4><p>${obrigCliente}</p></div>
         <div class="doc-block"><h4>Obrigações da empresa</h4><p>${obrigEmpresa}</p></div>
       `;
@@ -794,6 +815,7 @@
           <div class="doc-total-row"><span>Valor total</span><span>${totalTexto}</span></div>
         </div>
         <div class="doc-block"><h4>4. Condições de pagamento</h4><p>${pagamento}</p></div>
+        ${dadosPagamento}
         <div class="doc-block"><h4>5. Disposições gerais e cronograma</h4><p>Validade da proposta: ${validade} dias corridos a contar da data de emissão.</p></div>
       `;
     }
