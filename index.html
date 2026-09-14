@@ -467,6 +467,15 @@
         <input type="text" id="fClienteTelefone" placeholder="Ex.: 85999998888">
         <div class="hint">É pra esse número que o orçamento é enviado automaticamente.</div>
       </div>
+      <div class="field-group">
+        <label class="label">E-mail do cliente</label>
+        <input type="text" id="fClienteEmail" placeholder="email@exemplo.com">
+      </div>
+      <div class="field-group">
+        <label class="label">E-mails adicionais (opcional)</label>
+        <input type="text" id="fEmailsExtra" placeholder="separados por vírgula">
+        <div class="hint">Além do e-mail do cliente, quem mais deve receber esse orçamento por e-mail?</div>
+      </div>
 
       <div id="blocoComercio">
         <hr class="section-divider">
@@ -538,7 +547,10 @@
       <div class="doc-actions">
         <button class="btn-ghost" onclick="showScreen('novo')">Editar</button>
         <button class="btn-ghost" onclick="baixarPdf()">Baixar PDF</button>
-        <button class="cta-full" id="salvarOrcBtn" onclick="salvarOrcamento()">Salvar e enviar</button>
+      </div>
+      <div class="doc-actions">
+        <button class="btn-ghost" id="salvarRascunhoBtn" onclick="salvarOrcamento(false)">Salvar</button>
+        <button class="cta-full" id="enviarOrcBtn" onclick="salvarOrcamento(true)" style="margin-top:0;">Enviar</button>
       </div>
     </section>
 
@@ -850,7 +862,7 @@
     const list = document.getElementById('quoteList');
     list.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=id,numero,status,categoria,valor_total,clientes(nome)&order=created_at.desc`, { headers: authHeaders() });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=id,numero,status,categoria,valor_total,enviado_em,emails_extra,clientes(nome)&order=created_at.desc`, { headers: authHeaders() });
       orcamentosCache = res.ok ? await res.json() : [];
     }catch(e){ orcamentosCache = []; }
     renderQuoteList('todos');
@@ -866,7 +878,7 @@
     if(!filtered.length){ list.innerHTML = '<div class="empty-state"><p>Nenhum orçamento aqui ainda.</p></div>'; return; }
     list.innerHTML = filtered.map(q=>`
       <div class="quote-card status-${q.status}" onclick="abrirDetalheOrcamento('${q.id}')">
-        <div class="row1"><span class="num mono">ORÇ-${String(q.numero).padStart(3,'0')}</span><span class="cat-tag">${q.categoria==='comercio'?'Comércio':'Consultoria'}</span></div>
+        <div class="row1"><span class="num mono">ORÇ-${String(q.numero).padStart(3,'0')}</span><span class="cat-tag">${q.categoria==='comercio'?'Comércio':'Consultoria'}${q.enviado_em ? '' : ' · rascunho'}</span></div>
         <div class="cliente">${q.clientes ? q.clientes.nome : '—'}</div>
         <div class="row2"><span class="valor">R$ ${Number(q.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span><span class="badge status-${q.status}">${statusLabel[q.status]||q.status}</span></div>
       </div>
@@ -877,6 +889,15 @@
     const q = orcamentosCache.find(o=>o.id===id);
     if(!q) return;
     const opcoes = statusOrdem.map(s=>`<option value="${s}" ${s===q.status?'selected':''}>${statusLabel[s]}</option>`).join('');
+    const envioHtml = q.enviado_em
+      ? `<div class="hint" style="margin-bottom:16px;">Enviado em ${new Date(q.enviado_em).toLocaleString('pt-BR')}.</div>`
+      : `
+        <div class="field-group">
+          <label class="label">E-mails adicionais (opcional)</label>
+          <input type="text" id="detEmailsExtra" placeholder="separados por vírgula" value="${q.emails_extra||''}">
+        </div>
+        <button class="cta-full" style="margin-bottom:16px;" onclick="enviarAgoraDetalhe('${id}')">Enviar orçamento agora</button>
+      `;
     document.getElementById('detalheConteudo').innerHTML = `
       <div class="field-group">
         <label class="label">Cliente</label>
@@ -886,6 +907,7 @@
         <div class="field-group"><label class="label">Número</label><input type="text" value="ORÇ-${String(q.numero).padStart(3,'0')}" disabled></div>
         <div class="field-group"><label class="label">Valor</label><input type="text" value="R$ ${Number(q.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2})}" disabled></div>
       </div>
+      ${envioHtml}
       <div class="field-group">
         <label class="label">Status</label>
         <select id="detStatus">${opcoes}</select>
@@ -895,6 +917,14 @@
       <button class="btn-danger" onclick="excluirOrcamento('${id}')">Excluir orçamento</button>
     `;
     showScreen('orcamento-detalhe');
+  }
+
+  async function enviarAgoraDetalhe(id){
+    const emailsExtra = document.getElementById('detEmailsExtra').value.trim();
+    const ok = await chamarEnviarOrcamento(id, emailsExtra);
+    alert(ok ? 'Orçamento enviado!' : 'Não deu pra enviar agora. Tenta de novo.');
+    carregarOrcamentos();
+    showScreen('orcamentos');
   }
 
   async function salvarStatusOrcamento(id){
@@ -990,7 +1020,7 @@
 
   async function popularClienteSelect(){
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&select=id,nome,telefone,documento&order=nome.asc`, { headers: authHeaders() });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&select=id,nome,telefone,documento,email&order=nome.asc`, { headers: authHeaders() });
       clientesSelectCache = res.ok ? await res.json() : [];
     }catch(e){ clientesSelectCache = []; }
     const sel = document.getElementById('clienteExistenteSelect');
@@ -1005,6 +1035,7 @@
       document.getElementById('fCliente').value = c.nome || '';
       document.getElementById('fClienteDocumento').value = c.documento || '';
       document.getElementById('fClienteTelefone').value = c.telefone || '';
+      document.getElementById('fClienteEmail').value = c.email || '';
     }
   }
 
@@ -1282,6 +1313,8 @@
     document.getElementById('fClienteDocumentoHint').textContent = 'Se for CNPJ, preenchemos o nome automaticamente.';
     document.getElementById('fCliente').value = '';
     document.getElementById('fClienteTelefone').value = '';
+    document.getElementById('fClienteEmail').value = '';
+    document.getElementById('fEmailsExtra').value = '';
     document.getElementById('fEscopo').value = '';
     ['fCargaHoraria','fGarantiaMinima','fValorPacote','fValorHoraCons','fHorasEstCons','fValorProjeto'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('fValidade').value = 15;
@@ -1295,6 +1328,8 @@
     const clienteTelefone = document.getElementById('fClienteTelefone').value.trim();
     if(!clienteTelefone){ alert('Telefone do cliente é obrigatório (agora é obrigatório no cadastro, e é pra ele que o orçamento é enviado).'); return; }
     const clienteDocumento = document.getElementById('fClienteDocumento').value.trim();
+    const clienteEmail = document.getElementById('fClienteEmail').value.trim();
+    const emailsExtra = document.getElementById('fEmailsExtra').value.trim();
     const textoPadrao = document.getElementById('fTextoPadrao').value;
     const pagamento = document.getElementById('fPagamento').value;
     const obrigCliente = document.getElementById('fObrigCliente').value;
@@ -1391,7 +1426,7 @@
     const signature = `<div class="doc-block" style="margin-top:6px;"><p>Atenciosamente,</p>${company.assinatura_url ? `<img class="sig-img" src="${company.assinatura_url}">` : ''}<p style="font-weight:700;">${company.nome||''}</p></div>`;
 
     document.getElementById('docContent').innerHTML = head + body + signature;
-    window._pendingCliente = { nome: cliente, telefone: clienteTelefone, documento: clienteDocumento };
+    window._pendingCliente = { nome: cliente, telefone: clienteTelefone, documento: clienteDocumento, email: clienteEmail, emailsExtra: emailsExtra };
     window._pendingPayload = payload;
     showScreen('doc');
   }
@@ -1407,7 +1442,7 @@
     }).save();
   }
 
-  async function encontrarOuCriarCliente(nome, telefone, documento){
+  async function encontrarOuCriarCliente(nome, telefone, documento, email){
     const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&nome=eq.${encodeURIComponent(nome)}&select=id&limit=1`, { headers: authHeaders() });
     if(res.ok){
       const rows = await res.json();
@@ -1415,18 +1450,29 @@
     }
     const res2 = await fetch(`${SUPABASE_URL}/rest/v1/clientes`, {
       method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
-      body: JSON.stringify({ empresa_id: empresaId, nome, telefone, documento })
+      body: JSON.stringify({ empresa_id: empresaId, nome, telefone, documento, email })
     });
     const rows2 = await res2.json();
     return rows2[0].id;
   }
 
-  async function salvarOrcamento(){
-    const btn = document.getElementById('salvarOrcBtn');
-    btn.disabled = true; btn.textContent = 'Salvando...';
+  async function chamarEnviarOrcamento(id, emailsExtra){
     try{
-      const clienteId = await encontrarOuCriarCliente(window._pendingCliente.nome, window._pendingCliente.telefone, window._pendingCliente.documento);
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/enviar_orcamento`, {
+        method:'POST', headers: authHeaders(), body: JSON.stringify({ p_orcamento_id: id, p_emails_extra: emailsExtra || null })
+      });
+      return res.ok;
+    }catch(e){ return false; }
+  }
+
+  async function salvarOrcamento(enviarAgora){
+    const btn = enviarAgora ? document.getElementById('enviarOrcBtn') : document.getElementById('salvarRascunhoBtn');
+    const textoOriginal = btn.textContent;
+    btn.disabled = true; btn.textContent = enviarAgora ? 'Enviando...' : 'Salvando...';
+    try{
+      const clienteId = await encontrarOuCriarCliente(window._pendingCliente.nome, window._pendingCliente.telefone, window._pendingCliente.documento, window._pendingCliente.email);
       const payload = Object.assign({ empresa_id: empresaId, cliente_id: clienteId }, window._pendingPayload);
+      if(window._pendingCliente.emailsExtra) payload.emails_extra = window._pendingCliente.emailsExtra;
       const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos`, {
         method:'POST', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
       });
@@ -1439,15 +1485,16 @@
           await fetch(`${SUPABASE_URL}/rest/v1/itens_orcamento`, { method:'POST', headers: authHeaders(), body: JSON.stringify(itensPayload) });
         }
       }
-      btn.disabled = false; btn.textContent = 'Salvar e enviar';
+      btn.disabled = false; btn.textContent = textoOriginal;
       showScreen('orcamentos');
-      if(window._pendingCliente.telefone){
-        alert('Orçamento salvo! O envio por WhatsApp acontece automaticamente em instantes.');
+      if(enviarAgora){
+        const ok = await chamarEnviarOrcamento(orcamentoId, window._pendingCliente.emailsExtra);
+        alert(ok ? 'Orçamento enviado! WhatsApp (e e-mail, se configurado) saem em instantes.' : 'Orçamento salvo, mas não deu pra enviar agora — tenta de novo na tela do orçamento.');
       } else {
-        alert('Orçamento salvo — mas sem telefone do cliente o envio automático por WhatsApp não acontece.');
+        alert('Orçamento salvo como rascunho. Quando quiser, abre ele na lista e manda enviar.');
       }
     }catch(e){
-      btn.disabled = false; btn.textContent = 'Salvar e enviar';
+      btn.disabled = false; btn.textContent = textoOriginal;
       alert('Não deu pra salvar agora. Tenta de novo.');
     }
   }
