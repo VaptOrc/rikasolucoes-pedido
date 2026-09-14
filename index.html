@@ -952,7 +952,7 @@
     const list = document.getElementById('clientesList');
     list.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&select=id,nome,telefone,documento,endereco&order=created_at.desc`, { headers: authHeaders() });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&select=id,nome,telefone,documento,email,endereco&order=created_at.desc`, { headers: authHeaders() });
       clientesCache = res.ok ? await res.json() : [];
       if(!clientesCache.length){ list.innerHTML = '<div class="empty-state"><p>Nenhum cliente ainda — clica em "+ Novo cliente" ou crie um orçamento.</p></div>'; return; }
       list.innerHTML = clientesCache.map(c=>`
