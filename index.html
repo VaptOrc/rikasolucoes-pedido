@@ -660,23 +660,26 @@
     }, extra || {});
   }
 
-  function confirmLogout(){
-  if(confirm('Sair da conta?')) logout();
-}
-(function(){
-  const topRow = document.querySelector('.top-row');
-  if(topRow){
-    const btn = document.createElement('button');
-    btn.className = 'back';
-    btn.id = 'headerLogoutBtn';
-    btn.title = 'Sair';
-    btn.style.marginLeft = 'auto';
-    btn.style.display = 'none';
-    btn.textContent = '⏻';
-    btn.onclick = confirmLogout;
-    topRow.appendChild(btn);
+    function confirmLogout(){
+    if(confirm('Sair da conta?')) logout();
   }
-})();
+
+  (function(){
+    const topRow = document.querySelector('.top-row');
+    if(topRow){
+      const btn = document.createElement('button');
+      btn.className = 'back';
+      btn.id = 'headerLogoutBtn';
+      btn.title = 'Sair';
+      btn.style.marginLeft = 'auto';
+      btn.style.display = 'none';
+      btn.textContent = '⏻';
+      btn.onclick = confirmLogout;
+      topRow.appendChild(btn);
+    }
+  })();
+
+  function showScreen(name, push=true){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+name).classList.add('active');
     if(titles[name]){
