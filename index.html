@@ -131,7 +131,10 @@
   .btn-danger{background:var(--white);border:1px solid var(--red);color:var(--red);padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;width:100%;margin-top:10px;}
   .sig-img{max-height:46px;display:block;margin:6px 0;}
 
-  nav.tabbar{position:absolute;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:8px 4px 10px;}
+  nav.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:8px 4px 10px;z-index:20;}
+  #app:has(#screen-login.active) #headerLogoutBtn,
+  #app:has(#screen-bloqueado.active) #headerLogoutBtn{display:none !important;}
+  #app:not(:has(#screen-login.active)):not(:has(#screen-bloqueado.active)) #headerLogoutBtn{display:inline-block !important;}
   nav.tabbar button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--slate);padding:4px 0;}
   nav.tabbar button svg{width:21px;height:21px;}
   nav.tabbar button .label{font-size:10.5px;font-weight:500;}
@@ -243,7 +246,8 @@
         <label class="label">Nome da empresa</label>
         <input type="text" id="loginNomeEmpresa" placeholder="Nome da sua empresa">
       </div>
-      <button class="cta-full" id="loginBtn" onclick="fazerLogin()">Entrar</button>
+      <button class="btn-ghost" style="width:100%;margin-top:10px;" onclick="loginComGoogle()">Continuar com Google</button>
+      <button class="cta-full" id="concluirGoogleBtn" style="display:none;margin-top:10px;" onclick="concluirCadastroGoogle()">Concluir cadastro</button>
       <div class="login-toggle">
         <button class="btn-ghost" style="flex:1;" onclick="fazerCadastro()">Criar conta</button>
       </div>
@@ -656,7 +660,23 @@
     }, extra || {});
   }
 
-  function showScreen(name, push=true){
+  function confirmLogout(){
+  if(confirm('Sair da conta?')) logout();
+}
+(function(){
+  const topRow = document.querySelector('.top-row');
+  if(topRow){
+    const btn = document.createElement('button');
+    btn.className = 'back';
+    btn.id = 'headerLogoutBtn';
+    btn.title = 'Sair';
+    btn.style.marginLeft = 'auto';
+    btn.style.display = 'none';
+    btn.textContent = '⏻';
+    btn.onclick = confirmLogout;
+    topRow.appendChild(btn);
+  }
+})();
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+name).classList.add('active');
     if(titles[name]){
@@ -683,7 +703,33 @@
   }
 
   // ===================== AUTH =====================
-  function setLoginMsg(msg){ document.getElementById('loginMsg').textContent = msg; }
+  function loginComGoogle(){
+  const redirectTo = window.location.origin + window.location.pathname;
+  window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
+}
+async function tratarCallbackOAuth(){
+  if(!location.hash || !location.hash.includes('access_token')) return false;
+  const params = new URLSearchParams(location.hash.substring(1));
+  const access_token = params.get('access_token');
+  if(!access_token) return false;
+  try{
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers:{ 'apikey':ANON_KEY, 'Authorization':'Bearer '+access_token } });
+    if(!res.ok) return false;
+    const user = await res.json();
+    session = { access_token, user_id: user.id };
+    localStorage.setItem('vaptorc_session', JSON.stringify(session));
+    window.history.replaceState(null, '', window.location.pathname);
+    return true;
+  }catch(e){ return false; }
+}
+async function concluirCadastroGoogle(){
+  const nomeEmpresa = document.getElementById('loginNomeEmpresa').value.trim();
+  if(!nomeEmpresa){ setLoginMsg('Preenche o nome da empresa.'); return; }
+  setLoginMsg('Finalizando...');
+  const ok = await criarEmpresaEUsuario(nomeEmpresa);
+  if(ok){ setLoginMsg(''); await irParaHomeOuBloqueio(); }
+  else setLoginMsg('Não deu pra criar a empresa agora. Tenta de novo.');
+}
 
   async function fazerLogin(){
     const email = document.getElementById('loginEmail').value.trim();
@@ -802,16 +848,26 @@
   }
 
   async function initSession(){
-    const saved = localStorage.getItem('vaptorc_session');
-    if(saved){
-      try{
-        session = JSON.parse(saved);
-        const ok = await carregarContexto();
-        if(ok){ await irParaHomeOuBloqueio(); return; }
-      }catch(e){}
-    }
+  const veioDoGoogle = await tratarCallbackOAuth();
+  if(veioDoGoogle){
+    const ok = await carregarContexto();
+    if(ok){ await irParaHomeOuBloqueio(); return; }
     showScreen('login', false);
+    document.getElementById('grupoNomeEmpresaLogin').style.display = 'block';
+    document.getElementById('concluirGoogleBtn').style.display = 'block';
+    setLoginMsg('Conta Google conectada! Preenche o nome da sua empresa e clica em "Concluir cadastro".');
+    return;
   }
+  const saved = localStorage.getItem('vaptorc_session');
+  if(saved){
+    try{
+      session = JSON.parse(saved);
+      const ok = await carregarContexto();
+      if(ok){ await irParaHomeOuBloqueio(); return; }
+    }catch(e){}
+  }
+  showScreen('login', false);
+}
 
   async function atualizarResumoHome(){
     document.getElementById('homeEyebrow').textContent = company.nome || '';
