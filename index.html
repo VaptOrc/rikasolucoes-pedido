@@ -764,16 +764,41 @@ async function tratarCallbackOAuth(){
   const access_token = params.get('access_token');
   if(!access_token) return false;
   const provider_token = params.get('provider_token') || null;
+  const provider_refresh_token = params.get('provider_refresh_token') || null;
   try{
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers:{ 'apikey':ANON_KEY, 'Authorization':'Bearer '+access_token } });
     if(!res.ok) return false;
     const user = await res.json();
-    session = { access_token, user_id: user.id, provider_token };
+    session = { access_token, user_id: user.id, provider_token, provider_refresh_token, provider_token_expira_em: Date.now() + 55*60*1000 };
     localStorage.setItem('vaptorc_session', JSON.stringify(session));
     window.history.replaceState(null, '', window.location.pathname);
     return true;
   }catch(e){ return false; }
 }
+
+// Garante que session.provider_token está válido, renovando via Edge Function se necessário
+async function garantirProviderToken(){
+  if(!session) return false;
+  if(session.provider_token && session.provider_token_expira_em && Date.now() < session.provider_token_expira_em){
+    return true;
+  }
+  if(!session.provider_refresh_token) return !!session.provider_token;
+  try{
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/google-refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token, 'apikey': ANON_KEY },
+      body: JSON.stringify({ refresh_token: session.provider_refresh_token })
+    });
+    if(!res.ok) return !!session.provider_token;
+    const data = await res.json();
+    if(!data.access_token) return !!session.provider_token;
+    session.provider_token = data.access_token;
+    session.provider_token_expira_em = Date.now() + ((data.expires_in||3300) * 1000) - 60000;
+    localStorage.setItem('vaptorc_session', JSON.stringify(session));
+    return true;
+  }catch(e){ return !!session.provider_token; }
+}
+
 async function concluirCadastroGoogle(){
   const nomeEmpresa = document.getElementById('loginNomeEmpresa').value.trim();
   if(!nomeEmpresa){ setLoginMsg('Preenche o nome da empresa.'); return; }
@@ -933,11 +958,16 @@ async function concluirCadastroGoogle(){
   async function carregarAgendaHome(){
     const box = document.getElementById('homeAgendaBox');
     if(!box) return;
-    if(!session || !session.provider_token){
+    if(!session || !(session.provider_token || session.provider_refresh_token)){
       box.innerHTML = '<div class="hint" style="margin-top:10px;">Entre com sua conta Google (Continuar com Google) pra ver aqui seus próximos compromissos da agenda.</div>';
       return;
     }
     box.innerHTML = '<div class="hint" style="margin-top:10px;">Carregando agenda...</div>';
+    const ok = await garantirProviderToken();
+    if(!ok || !session.provider_token){
+      box.innerHTML = '<div class="hint" style="margin-top:10px;">Não deu pra acessar sua agenda agora — entre com o Google de novo pra reconectar.</div>';
+      return;
+    }
     try{
       const agora = new Date().toISOString();
       const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(agora)}&maxResults=5&singleEvents=true&orderBy=startTime`;
@@ -959,7 +989,9 @@ async function concluirCadastroGoogle(){
   }
 
   async function criarEventoAgenda({titulo, descricao, data, hora, horas}){
-    if(!session || !session.provider_token) return;
+    if(!session || !(session.provider_token || session.provider_refresh_token)) return;
+    const ok = await garantirProviderToken();
+    if(!ok || !session.provider_token) return;
     try{
       const inicio = new Date(`${data}T${hora || '09:00'}:00`);
       const duracaoMs = (parseFloat(horas)||1) * 60 * 60 * 1000;
