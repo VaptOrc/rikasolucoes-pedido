@@ -269,7 +269,14 @@
       </button>
       <button class="cta-full" id="concluirGoogleBtn" style="display:none;margin-top:10px;" onclick="concluirCadastroGoogle()">Concluir cadastro</button>
       <div class="login-toggle">
+        <button class="cta-full" style="flex:1;margin-top:0;" onclick="fazerLogin()">Entrar</button>
         <button class="btn-ghost" style="flex:1;" onclick="fazerCadastro()">Criar conta</button>
+      </div>
+      <div class="logout-link" onclick="esqueciSenha()">Esqueci minha senha</div>
+      <div class="field-group" id="grupoNovaSenha" style="display:none;margin-top:16px;">
+        <label class="label">Nova senha</label>
+        <input type="password" id="novaSenhaInput" placeholder="Digite a nova senha">
+        <button class="cta-full" style="margin-top:10px;" onclick="salvarNovaSenha()">Salvar nova senha</button>
       </div>
       <div class="login-msg" id="loginMsg"></div>
       <div class="hint" style="text-align:center;margin-top:18px;">
@@ -962,10 +969,48 @@ async function concluirCadastroGoogle(){
         } else {
           setLoginMsg('Conta criada, mas não deu pra configurar a empresa agora. Tenta entrar de novo em instantes.');
         }
+      } else if(data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0){
+        setLoginMsg('Esse e-mail já tem conta cadastrada. Usa o botão "Entrar" com sua senha, ou clica em "Esqueci minha senha" se não lembra.');
       } else {
         setLoginMsg('Conta criada! Verifica seu e-mail pra confirmar — depois volta e faz login que a gente completa o cadastro da empresa.');
       }
     }catch(e){ setLoginMsg('Não deu pra criar a conta agora.'); }
+  }
+
+  async function esqueciSenha(){
+    const email = document.getElementById('loginEmail').value.trim();
+    if(!email){ setLoginMsg('Preenche seu e-mail no campo acima primeiro.'); return; }
+    setLoginMsg('Enviando e-mail de recuperação...');
+    try{
+      const redirectTo = window.location.origin + window.location.pathname;
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/recover?redirect_to=${encodeURIComponent(redirectTo)}`, {
+        method:'POST', headers:{'apikey':ANON_KEY,'Content-Type':'application/json'},
+        body: JSON.stringify({ email })
+      });
+      setLoginMsg(res.ok ? 'Se esse e-mail tiver conta, chega um link pra criar uma nova senha em instantes.' : 'Não deu pra enviar o e-mail agora.');
+    }catch(e){ setLoginMsg('Não deu pra enviar o e-mail agora.'); }
+  }
+
+  async function salvarNovaSenha(){
+    const novaSenha = document.getElementById('novaSenhaInput').value;
+    if(!novaSenha || novaSenha.length < 6){ setLoginMsg('A senha precisa ter pelo menos 6 caracteres.'); return; }
+    if(!window._recoveryAccessToken){ setLoginMsg('Link de recuperação expirado. Pede um novo em "Esqueci minha senha".'); return; }
+    setLoginMsg('Salvando nova senha...');
+    try{
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method:'PUT',
+        headers: { 'apikey': ANON_KEY, 'Authorization': 'Bearer ' + window._recoveryAccessToken, 'Content-Type':'application/json' },
+        body: JSON.stringify({ password: novaSenha })
+      });
+      if(!res.ok){ setLoginMsg('Não deu pra salvar a nova senha agora. Tenta de novo.'); return; }
+      const user = await res.json();
+      session = { access_token: window._recoveryAccessToken, user_id: user.id };
+      localStorage.setItem('vaptorc_session', JSON.stringify(session));
+      document.getElementById('grupoNovaSenha').style.display = 'none';
+      const ok = await carregarContexto();
+      if(ok){ setLoginMsg(''); await irParaHomeOuBloqueio(); }
+      else { setLoginMsg('Senha salva! Agora clica em "Entrar" com a nova senha.'); session = null; localStorage.removeItem('vaptorc_session'); }
+    }catch(e){ setLoginMsg('Não deu pra salvar a nova senha agora.'); }
   }
 
   function logout(){
@@ -1006,6 +1051,18 @@ async function concluirCadastroGoogle(){
   }
 
   async function initSession(){
+  if(location.hash && location.hash.includes('type=recovery')){
+    const params = new URLSearchParams(location.hash.substring(1));
+    const access_token = params.get('access_token');
+    if(access_token){
+      window._recoveryAccessToken = access_token;
+      window.history.replaceState(null, '', window.location.pathname);
+      showScreen('login', false);
+      document.getElementById('grupoNovaSenha').style.display = 'block';
+      setLoginMsg('Digite sua nova senha abaixo.');
+      return;
+    }
+  }
   const veioDoGoogle = await tratarCallbackOAuth();
   if(veioDoGoogle){
     const ok = await carregarContexto();
