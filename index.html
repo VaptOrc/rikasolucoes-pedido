@@ -766,22 +766,29 @@ async function concluirCadastroGoogle(){
 
   async function criarEmpresaEUsuario(nomeEmpresa){
     try{
+      console.log('[VaptOrc DEBUG] session no momento do insert:', session);
       const res = await fetch(`${SUPABASE_URL}/rest/v1/empresas`, {
         method:'POST', headers: authHeaders({'Prefer':'return=representation'}),
         body: JSON.stringify({ nome: nomeEmpresa })
       });
-      if(!res.ok) return false;
+      if(!res.ok){
+        console.error('[VaptOrc DEBUG] falha ao criar empresa. status:', res.status, 'body:', await res.text());
+        return false;
+      }
       const rows = await res.json();
       const novaEmpresaId = rows[0].id;
       const res2 = await fetch(`${SUPABASE_URL}/rest/v1/usuarios`, {
         method:'POST', headers: authHeaders(),
         body: JSON.stringify({ id: session.user_id, empresa_id: novaEmpresaId, papel: 'admin' })
       });
-      if(!res2.ok) return false;
+      if(!res2.ok){
+        console.error('[VaptOrc DEBUG] falha ao criar usuario. status:', res2.status, 'body:', await res2.text());
+        return false;
+      }
       empresaId = novaEmpresaId;
       company = rows[0];
       return true;
-    }catch(e){ return false; }
+    }catch(e){ console.error('[VaptOrc DEBUG] excecao:', e); return false; }
   }
 
   async function fazerCadastro(){
