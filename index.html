@@ -210,6 +210,10 @@
       <svg viewBox="0 0 24 24" width="20" height="20"><rect x="2" y="3" width="20" height="19" rx="3" fill="#fff" stroke="#dadce0" stroke-width="1"/><rect x="2" y="3" width="20" height="5" rx="2" fill="#1a73e8"/><rect x="3" y="13" width="7" height="7" fill="#34a853"/><rect x="14" y="13" width="7" height="7" fill="#fbbc04"/><text x="17.5" y="19" font-size="6" font-weight="700" fill="#3c4043" text-anchor="middle" font-family="Arial">31</text></svg>
       Agenda
     </button>
+    <button data-nav="plano-full" onclick="abrirPlanoFull()" id="navPlanoFullBtn" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.6 6.6L21 9l-5 4.6L17.4 21 12 17.3 6.6 21 8 13.6 3 9l6.4-.4L12 2Z"/></svg>
+      Plano Full
+    </button>
     <button data-nav="os" onclick="abrirOS()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"/><rect x="4" y="5" width="16" height="17" rx="2"/><path d="M8 11h8M8 15h5"/></svg>
       Ordens de Serviço
@@ -310,6 +314,11 @@
           <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="2" y="3" width="20" height="19" rx="3" fill="#fff" stroke="#dadce0" stroke-width="1"/><rect x="2" y="3" width="20" height="5" rx="2" fill="#1a73e8"/><rect x="3" y="13" width="7" height="7" fill="#34a853"/><rect x="14" y="13" width="7" height="7" fill="#fbbc04"/><text x="17.5" y="19" font-size="6" font-weight="700" fill="#3c4043" text-anchor="middle" font-family="Arial">31</text></svg></div>
           <div class="name">Agenda</div>
           <div class="desc">Seus compromissos do Google</div>
+        </div>
+        <div class="tile" onclick="abrirPlanoFull()" id="tilePlanoFull" style="display:none;">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.6 6.6L21 9l-5 4.6L17.4 21 12 17.3 6.6 21 8 13.6 3 9l6.4-.4L12 2Z"/></svg></div>
+          <div class="name">Plano Full</div>
+          <div class="desc">Libere sem limites</div>
         </div>
         <div class="tile" onclick="abrirOS()">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z"/><rect x="4" y="5" width="16" height="17" rx="2"/><path d="M8 11h8M8 15h5"/></svg></div>
@@ -434,6 +443,23 @@
     <section class="screen" id="screen-relatorio-banco-horas">
       <div class="empty-state" style="padding:20px 4px;text-align:left;"><p>Mostra o que foi contratado. Pra ver quanto já foi consumido de cada contrato, acesse "Ordens de Serviço".</p></div>
       <div id="relBancoHorasConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
+    </section>
+
+    <!-- PLANO FULL -->
+    <section class="screen" id="screen-plano-full">
+      <div class="doc-block" style="background:#fff8ec;border-radius:12px;padding:18px;margin-bottom:16px;">
+        <p style="font-weight:700;margin:0 0 6px;">Você está no plano Free</p>
+        <p class="sub" style="margin:0;">1 cliente, 1 orçamento e 1 item de catálogo cadastrados por vez, sem sua assinatura no documento e com marca d'água no orçamento.</p>
+      </div>
+      <p class="section-title">O QUE O PLANO FULL LIBERA</p>
+      <ul style="padding-left:20px;line-height:1.8;">
+        <li>Clientes, orçamentos e catálogo <strong>sem limite</strong></li>
+        <li>Sua assinatura no documento e <strong>sem marca d'água</strong></li>
+        <li>Ordens de Serviço e controle de banco de horas</li>
+        <li>Integração com a Agenda do Google</li>
+      </ul>
+      <button class="cta-full" onclick="assinarPlanoFull()" id="assinarPlanoFullBtn">Assinar Plano Full</button>
+      <div class="hint" style="text-align:center;margin-top:10px;">Dúvidas? Fale com a gente: <a href="mailto:comercial@rikasolucoes.com.br">comercial@rikasolucoes.com.br</a></div>
     </section>
 
     <!-- AGENDA DO GOOGLE -->
@@ -698,6 +724,7 @@
     doc: ['Documento', 'pronto para enviar ao cliente'],
     os: ['Ordens de Serviço', 'registre e acompanhe as horas trabalhadas'],
     agenda: ['Agenda', 'seus compromissos do Google'],
+    'plano-full': ['Plano Full', 'libere o VaptOrc sem limites'],
   };
   const tabScreens = ['home','orcamentos','clientes','relatorios'];
   let history = ['login'];
@@ -725,6 +752,28 @@
       'Authorization': 'Bearer ' + (session ? session.access_token : ANON_KEY),
       'Content-Type': 'application/json'
     }, extra || {});
+  }
+
+  // ===================== LIMITE DO PLANO FREE =====================
+  async function contarRegistros(tabela){
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${tabela}?empresa_id=eq.${empresaId}&select=id`, { headers: authHeaders({'Prefer':'count=exact','Range':'0-0'}) });
+      const cr = res.headers.get('content-range');
+      if(!cr) return 0;
+      const total = parseInt(cr.split('/')[1]);
+      return isNaN(total) ? 0 : total;
+    }catch(e){ return 0; }
+  }
+  async function bloqueadoPorLimiteFree(tabela, singular){
+    if(!company || company.plano !== 'free') return false;
+    const total = await contarRegistros(tabela);
+    if(total >= 1){
+      if(confirm(`No plano Free você pode ter só 1 ${singular} cadastrado. Quer conhecer o Plano Full pra liberar sem limite?`)){
+        abrirPlanoFull();
+      }
+      return true;
+    }
+    return false;
   }
 
   function confirmLogout(){
@@ -931,6 +980,8 @@ async function concluirCadastroGoogle(){
     const empresas = await res2.json();
     if(!empresas.length) return false;
     company = empresas[0];
+    document.getElementById('navPlanoFullBtn').style.display = company.plano === 'free' ? 'flex' : 'none';
+    document.getElementById('tilePlanoFull').style.display = company.plano === 'free' ? 'block' : 'none';
     return true;
   }
 
@@ -977,7 +1028,14 @@ async function concluirCadastroGoogle(){
     document.getElementById('homeResumo').textContent = `${pendentes} orçamento(s) pendente(s) e ${andamento} em andamento.`;
   }
 
-  // ===================== AGENDA DO GOOGLE =====================
+  // ===================== PLANO FULL =====================
+  function abrirPlanoFull(){
+    showScreen('plano-full');
+  }
+  function assinarPlanoFull(){
+    window.location.href = 'mailto:comercial@rikasolucoes.com.br?subject=' + encodeURIComponent('Quero assinar o Plano Full — ' + (company.nome||'')) + '&body=' + encodeURIComponent('Oi! Quero assinar o Plano Full do VaptOrc pra minha empresa ' + (company.nome||'') + '.');
+  }
+
   async function abrirAgenda(){
     showScreen('agenda');
     await carregarAgenda();
@@ -1325,6 +1383,7 @@ async function concluirCadastroGoogle(){
     };
     if(!payload.nome){ alert('Preenche o nome do cliente.'); return; }
     if(!payload.telefone){ alert('Telefone é obrigatório.'); return; }
+    if(!editingClienteId && await bloqueadoPorLimiteFree('clientes', 'cliente')) return;
     try{
       let res;
       if(editingClienteId){
@@ -1644,6 +1703,7 @@ async function concluirCadastroGoogle(){
       valor_unitario: parseFloat(document.getElementById('catValor').value)||0
     };
     if(!payload.nome){ alert('Preenche o nome do item.'); return; }
+    if(!editingCatalogoId && await bloqueadoPorLimiteFree('catalogo_itens', 'item de catálogo')) return;
     try{
       let res;
       if(editingCatalogoId){
@@ -1929,6 +1989,7 @@ async function concluirCadastroGoogle(){
   async function salvarOrcamento(enviarAgora){
     const btn = enviarAgora ? document.getElementById('enviarOrcBtn') : document.getElementById('salvarRascunhoBtn');
     const textoOriginal = btn.textContent;
+    if(await bloqueadoPorLimiteFree('orcamentos', 'orçamento')) return;
     btn.disabled = true; btn.textContent = enviarAgora ? 'Enviando...' : 'Salvando...';
     try{
       const clienteId = await encontrarOuCriarCliente(window._pendingCliente.nome, window._pendingCliente.telefone, window._pendingCliente.documento, window._pendingCliente.email);
