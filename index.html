@@ -667,13 +667,20 @@
     <!-- DOCUMENTO GERADO -->
     <section class="screen" id="screen-doc">
       <div class="doc-paper" id="docContent"></div>
-      <div class="doc-actions">
+      <div class="doc-actions" id="docActionsCreate">
         <button class="btn-ghost" onclick="showScreen('novo')">Editar</button>
         <button class="btn-ghost" onclick="baixarPdf()">Baixar PDF</button>
       </div>
-      <div class="doc-actions">
+      <div class="doc-actions" id="docActionsCreate2">
         <button class="btn-ghost" id="salvarRascunhoBtn" onclick="salvarOrcamento(false)">Salvar</button>
         <button class="cta-full" id="enviarOrcBtn" onclick="salvarOrcamento(true)" style="margin-top:0;">Enviar</button>
+      </div>
+      <div class="doc-actions" id="docActionsView" style="display:none;">
+        <button class="btn-ghost" onclick="baixarPdf()">Baixar PDF</button>
+        <button class="btn-ghost" id="docViewEditarBtn" onclick="editarOrcamentoAtual()" style="display:none;">Editar</button>
+      </div>
+      <div class="doc-actions" id="docActionsView2" style="display:none;">
+        <button class="btn-ghost" style="width:100%;" onclick="goBack()">Voltar</button>
       </div>
     </section>
 
@@ -741,6 +748,8 @@
   let catTipoAtual = 'servico';
   let clientesSelectCache = [];
   let souSuperAdmin = false;
+  let editingOrcamentoId = null;
+  let docContexto = { modo: 'novo' };
   const statusLabel = {pendente:'Pendente', aprovado:'Aprovado', andamento:'Em andamento', aguardando_pagamento:'Aguardando pagamento', concluido:'Concluído', garantia:'Garantia', cancelado:'Cancelado'};
   const statusOrdem = ['pendente','aguardando_aprovacao','aprovado','andamento','aguardando_pagamento','concluido','garantia','cancelado'];
   const statusConfirmados = ['aprovado','andamento','aguardando_pagamento','concluido','garantia'];
@@ -1293,6 +1302,10 @@ async function concluirCadastroGoogle(){
         <div class="field-group"><label class="label">Valor</label><input type="text" value="R$ ${Number(q.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2})}" disabled></div>
       </div>
       ${envioHtml}
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="btn-ghost" style="flex:1;" onclick="visualizarOrcamento('${id}')">Ver proposta</button>
+        ${q.status==='pendente' ? `<button class="btn-ghost" style="flex:1;" onclick="editarOrcamento('${id}')">Editar</button>` : ''}
+      </div>
       <div class="field-group">
         <label class="label">Status</label>
         <select id="detStatus">${opcoes}</select>
@@ -1616,7 +1629,7 @@ async function concluirCadastroGoogle(){
     const list = document.getElementById('adminList');
     list.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/empresas?select=id,nome,status_assinatura,valor_mensalidade,email,telefone&order=nome.asc`, { headers: authHeaders() });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/empresas?select=id,nome,status_assinatura,valor_mensalidade,email,telefone,plano&order=nome.asc`, { headers: authHeaders() });
       const rows = res.ok ? await res.json() : [];
       if(!rows.length){ list.innerHTML = '<div class="empty-state"><p>Nenhuma empresa ainda.</p></div>'; return; }
       list.innerHTML = rows.map(e=>`
@@ -1627,6 +1640,10 @@ async function concluirCadastroGoogle(){
           </div>
           <div style="display:flex;gap:6px;">
             <input type="number" min="0" placeholder="Valor mensal (R$)" value="${e.valor_mensalidade||''}" id="valorMensal-${e.id}" style="flex:1;">
+            <select id="plano-${e.id}" style="flex:0 0 88px;">
+              <option value="free" ${e.plano!=='full'?'selected':''}>Free</option>
+              <option value="full" ${e.plano==='full'?'selected':''}>Full</option>
+            </select>
             <button class="btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="salvarValorMensal('${e.id}')">Salvar</button>
           </div>
         </div>
@@ -1635,10 +1652,13 @@ async function concluirCadastroGoogle(){
   }
   async function salvarValorMensal(id){
     const valor = parseFloat(document.getElementById('valorMensal-'+id).value) || null;
+    const planoSel = document.getElementById('plano-'+id) ? document.getElementById('plano-'+id).value : undefined;
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/empresas?id=eq.${id}`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify({ valor_mensalidade: valor }) });
+      const body = { valor_mensalidade: valor };
+      if(planoSel) body.plano = planoSel;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/empresas?id=eq.${id}`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(body) });
       if(!res.ok) throw new Error('falhou');
-      alert('Valor salvo.');
+      alert('Salvo.');
     }catch(e){ alert('Não deu pra salvar agora.'); }
   }
   async function alternarStatusEmpresa(id, statusAtual){
@@ -1829,6 +1849,7 @@ async function concluirCadastroGoogle(){
   }
 
   function resetForm(){
+    editingOrcamentoId = null;
     document.getElementById('clienteExistenteSelect').value = '';
     document.getElementById('fClienteDocumento').value = '';
     document.getElementById('fClienteDocumentoHint').textContent = 'Se for CNPJ, preenchemos o nome automaticamente.';
@@ -1844,20 +1865,10 @@ async function concluirCadastroGoogle(){
     setModo('comercio'); setModeloContrato('banco'); renderItems(); recalcTotal();
   }
 
-  function gerarDocumento(){
-    const cliente = document.getElementById('fCliente').value || 'Cliente';
-    const clienteTelefone = document.getElementById('fClienteTelefone').value.trim();
-    if(!clienteTelefone){ alert('Telefone do cliente é obrigatório (agora é obrigatório no cadastro, e é pra ele que o orçamento é enviado).'); return; }
-    const clienteDocumento = document.getElementById('fClienteDocumento').value.trim();
-    const clienteEmail = document.getElementById('fClienteEmail').value.trim();
-    const emailsExtra = document.getElementById('fEmailsExtra').value.trim();
-    const textoPadrao = document.getElementById('fTextoPadrao').value;
-    const pagamento = document.getElementById('fPagamento').value;
-    const obrigCliente = document.getElementById('fObrigCliente').value;
-    const obrigEmpresa = document.getElementById('fObrigEmpresa').value;
-    const total = calcTotal();
+  // Monta o HTML da proposta a partir de um contexto normalizado (usado tanto ao gerar quanto ao visualizar/editar um já existente)
+  function construirDocumentoHTML(ctx){
     const hoje = new Date().toLocaleDateString('pt-BR');
-    const totalTexto = (total===null) ? 'Conforme horas efetivamente trabalhadas' : 'R$ '+total.toLocaleString('pt-BR',{minimumFractionDigits:2});
+    const totalTexto = (ctx.total===null || ctx.total===undefined) ? 'Conforme horas efetivamente trabalhadas' : 'R$ '+Number(ctx.total).toLocaleString('pt-BR',{minimumFractionDigits:2});
 
     const head = `
       <div class="doc-head">
@@ -1875,6 +1886,80 @@ async function concluirCadastroGoogle(){
         ${company.chave_pix ? `<p><strong>Chave Pix:</strong> ${company.chave_pix}</p>` : ''}
         ${company.dados_bancarios ? `<p><strong>Dados bancários:</strong> ${company.dados_bancarios}</p>` : ''}
       </div>` : '';
+
+    if(ctx.categoria==='comercio'){
+      const itensLista = ctx.items||[];
+      body = `
+        <div class="doc-block"><p>${ctx.textoPadrao||''}</p></div>
+        <div class="doc-block"><h4>Cliente</h4><p>${ctx.cliente}</p></div>
+        <div class="doc-block">
+          <h4>Itens</h4>
+          ${itensLista.map(it=>`<p>${it.desc||'(sem descrição)'} — ${tipoItemLabel[it.tipo]||it.tipo} · ${it.qtd} × R$ ${Number(it.valorUnit).toLocaleString('pt-BR',{minimumFractionDigits:2})} = R$ ${(it.qtd*it.valorUnit).toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>`).join('')}
+          <div class="doc-total-row"><span>Total</span><span>${totalTexto}</span></div>
+        </div>
+        <div class="doc-block"><h4>Condições de pagamento</h4><p>${ctx.pagamento||''}</p></div>
+        ${dadosPagamento}
+        <div class="doc-block"><h4>Obrigações do cliente</h4><p>${ctx.obrigCliente||''}</p></div>
+        <div class="doc-block"><h4>Obrigações da empresa</h4><p>${ctx.obrigEmpresa||''}</p></div>
+      `;
+    } else {
+      const modeloLabel = {banco:'Banco de Horas', avulsa:'Horas Avulsa', projeto:'Projeto Fechado'}[ctx.modeloContratoSel] || '—';
+      let detalhe = '';
+      if(ctx.modeloContratoSel==='banco'){
+        detalhe = `<p>Carga horária contratada: ${ctx.carga||'—'}h${ctx.valorHora ? ' · Valor da hora: R$ '+Number(ctx.valorHora).toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</p>`;
+      } else if(ctx.modeloContratoSel==='avulsa'){
+        detalhe = `<p>Valor por hora: R$ ${Number(ctx.valorHora||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}${ctx.horasEstimadas ? ' · Horas estimadas: '+ctx.horasEstimadas+'h' : ''}</p>`;
+      } else {
+        detalhe = `<p>Valor fechado para o escopo descrito acima.</p>`;
+      }
+      body = `
+        <div class="doc-block">
+          <p style="font-weight:700;">PROPOSTA COMERCIAL DE PRESTAÇÃO DE SERVIÇOS</p>
+          <p>À<br>${ctx.cliente}</p><p>Prezados(as),</p><p>${ctx.textoPadrao||''}</p>
+        </div>
+        <div class="doc-block"><h4>1. Escopo dos serviços</h4><p>${ctx.escopo||'—'}</p></div>
+        <div class="doc-block">
+          <h4>2. Responsabilidades e obrigações</h4>
+          <p><strong>2.1 Cabe ao cliente:</strong><br>${ctx.obrigCliente||''}</p>
+          <p style="margin-top:8px;"><strong>2.2 Cabe à ${company.nome}:</strong><br>${ctx.obrigEmpresa||''}</p>
+        </div>
+        <div class="doc-block">
+          <h4>3. Investimento e carga horária</h4>
+          <p><strong>Modelo da proposta:</strong> ${modeloLabel}</p>
+          ${detalhe}
+          <div class="doc-total-row"><span>Valor total</span><span>${totalTexto}</span></div>
+        </div>
+        <div class="doc-block"><h4>4. Condições de pagamento</h4><p>${ctx.pagamento||''}</p></div>
+        ${dadosPagamento}
+        <div class="doc-block"><h4>5. Disposições gerais e cronograma</h4><p>Validade da proposta: ${ctx.validade||15} dias corridos a contar da data de emissão.</p></div>
+      `;
+    }
+
+    const signature = `<div class="doc-block" style="margin-top:6px;"><p>Atenciosamente,</p>${company.assinatura_url ? `<img class="sig-img" src="${company.assinatura_url}">` : ''}<p style="font-weight:700;">${company.nome||''}</p></div>`;
+    return head + body + signature;
+  }
+
+  function mostrarAcoesDoc(modo, statusAtual){
+    document.getElementById('docActionsCreate').style.display = modo==='novo' ? 'flex' : 'none';
+    document.getElementById('docActionsCreate2').style.display = modo==='novo' ? 'flex' : 'none';
+    document.getElementById('docActionsView').style.display = modo==='view' ? 'flex' : 'none';
+    document.getElementById('docActionsView2').style.display = modo==='view' ? 'flex' : 'none';
+    document.getElementById('docViewEditarBtn').style.display = (modo==='view' && statusAtual==='pendente') ? 'inline-block' : 'none';
+  }
+
+  function gerarDocumento(){
+    const cliente = document.getElementById('fCliente').value || 'Cliente';
+    const clienteTelefone = document.getElementById('fClienteTelefone').value.trim();
+    if(!clienteTelefone){ alert('Telefone do cliente é obrigatório (agora é obrigatório no cadastro, e é pra ele que o orçamento é enviado).'); return; }
+    const clienteDocumento = document.getElementById('fClienteDocumento').value.trim();
+    const clienteEmail = document.getElementById('fClienteEmail').value.trim();
+    const emailsExtra = document.getElementById('fEmailsExtra').value.trim();
+    const textoPadrao = document.getElementById('fTextoPadrao').value;
+    const pagamento = document.getElementById('fPagamento').value;
+    const obrigCliente = document.getElementById('fObrigCliente').value;
+    const obrigEmpresa = document.getElementById('fObrigEmpresa').value;
+    const total = calcTotal();
+
     let payload = {
       categoria: modoAtual,
       texto_abertura: textoPadrao,
@@ -1883,73 +1968,135 @@ async function concluirCadastroGoogle(){
       obrigacoes_empresa: obrigEmpresa,
       valor_total: total===null?0:total
     };
+    let ctx = { cliente, categoria: modoAtual, textoPadrao, pagamento, obrigCliente, obrigEmpresa, total, items };
 
-    if(modoAtual==='comercio'){
-      body = `
-        <div class="doc-block"><p>${textoPadrao}</p></div>
-        <div class="doc-block"><h4>Cliente</h4><p>${cliente}</p></div>
-        <div class="doc-block">
-          <h4>Itens</h4>
-          ${items.map(it=>`<p>${it.desc||'(sem descrição)'} — ${tipoItemLabel[it.tipo]||it.tipo} · ${it.qtd} × R$ ${it.valorUnit.toLocaleString('pt-BR',{minimumFractionDigits:2})} = R$ ${(it.qtd*it.valorUnit).toLocaleString('pt-BR',{minimumFractionDigits:2})}</p>`).join('')}
-          <div class="doc-total-row"><span>Total</span><span>${totalTexto}</span></div>
-        </div>
-        <div class="doc-block"><h4>Condições de pagamento</h4><p>${pagamento}</p></div>
-        ${dadosPagamento}
-        <div class="doc-block"><h4>Obrigações do cliente</h4><p>${obrigCliente}</p></div>
-        <div class="doc-block"><h4>Obrigações da empresa</h4><p>${obrigEmpresa}</p></div>
-      `;
-    } else {
+    if(modoAtual==='consultoria'){
       const escopo = document.getElementById('fEscopo').value || '—';
       const validade = parseInt(document.getElementById('fValidade').value) || 15;
-      const modeloLabel = {banco:'Banco de Horas', avulsa:'Horas Avulsa', projeto:'Projeto Fechado'}[modeloContratoAtual];
       const modeloDb = {banco:'banco_horas', avulsa:'horas_avulsa', projeto:'projeto_fechado'}[modeloContratoAtual];
-      let detalhe = '';
       payload.escopo = escopo;
       payload.validade_dias = validade;
       payload.modelo_contrato = modeloDb;
+      ctx.escopo = escopo; ctx.validade = validade; ctx.modeloContratoSel = modeloContratoAtual;
       if(modeloContratoAtual==='banco'){
         const carga = parseFloat(document.getElementById('fCargaHoraria').value)||null;
         const horaBanco = parseFloat(document.getElementById('fValorHoraBanco').value)||null;
         payload.carga_horaria_contratada = carga; payload.valor_hora = horaBanco; payload.valor_pacote = total;
-        detalhe = `<p>Carga horária contratada: ${carga||'—'}h${horaBanco ? ' · Valor da hora: R$ '+horaBanco.toLocaleString('pt-BR',{minimumFractionDigits:2}) : ''}</p>`;
+        ctx.carga = carga; ctx.valorHora = horaBanco;
       } else if(modeloContratoAtual==='avulsa'){
         const hora = parseFloat(document.getElementById('fValorHoraCons').value)||0;
         const horas = parseFloat(document.getElementById('fHorasEstCons').value)||null;
         payload.valor_hora = hora; payload.horas_estimadas = horas;
-        detalhe = `<p>Valor por hora: R$ ${hora.toLocaleString('pt-BR',{minimumFractionDigits:2})}${horas ? ' · Horas estimadas: '+horas+'h' : ''}</p>`;
+        ctx.valorHora = hora; ctx.horasEstimadas = horas;
       } else {
         payload.valor_projeto = total;
-        detalhe = `<p>Valor fechado para o escopo descrito acima.</p>`;
       }
-      body = `
-        <div class="doc-block">
-          <p style="font-weight:700;">PROPOSTA COMERCIAL DE PRESTAÇÃO DE SERVIÇOS</p>
-          <p>À<br>${cliente}</p><p>Prezados(as),</p><p>${textoPadrao}</p>
-        </div>
-        <div class="doc-block"><h4>1. Escopo dos serviços</h4><p>${escopo}</p></div>
-        <div class="doc-block">
-          <h4>2. Responsabilidades e obrigações</h4>
-          <p><strong>2.1 Cabe ao cliente:</strong><br>${obrigCliente}</p>
-          <p style="margin-top:8px;"><strong>2.2 Cabe à ${company.nome}:</strong><br>${obrigEmpresa}</p>
-        </div>
-        <div class="doc-block">
-          <h4>3. Investimento e carga horária</h4>
-          <p><strong>Modelo da proposta:</strong> ${modeloLabel}</p>
-          ${detalhe}
-          <div class="doc-total-row"><span>Valor total</span><span>${totalTexto}</span></div>
-        </div>
-        <div class="doc-block"><h4>4. Condições de pagamento</h4><p>${pagamento}</p></div>
-        ${dadosPagamento}
-        <div class="doc-block"><h4>5. Disposições gerais e cronograma</h4><p>Validade da proposta: ${validade} dias corridos a contar da data de emissão.</p></div>
-      `;
     }
 
-    const signature = `<div class="doc-block" style="margin-top:6px;"><p>Atenciosamente,</p>${company.assinatura_url ? `<img class="sig-img" src="${company.assinatura_url}">` : ''}<p style="font-weight:700;">${company.nome||''}</p></div>`;
-
-    document.getElementById('docContent').innerHTML = head + body + signature;
+    document.getElementById('docContent').innerHTML = construirDocumentoHTML(ctx);
     window._pendingCliente = { nome: cliente, telefone: clienteTelefone, documento: clienteDocumento, email: clienteEmail, emailsExtra: emailsExtra };
     window._pendingPayload = payload;
+    docContexto = { modo: 'novo' };
+    mostrarAcoesDoc('novo');
     showScreen('doc');
+  }
+
+  // Busca um orçamento completo (com dados do cliente e, se Comércio, os itens) pra visualizar ou editar
+  async function buscarOrcamentoCompleto(id){
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?id=eq.${id}&select=*,clientes(*)`, { headers: authHeaders() });
+      if(!res.ok) return null;
+      const rows = await res.json();
+      if(!rows.length) return null;
+      const orc = rows[0];
+      if(orc.categoria === 'comercio'){
+        const resItens = await fetch(`${SUPABASE_URL}/rest/v1/itens_orcamento?orcamento_id=eq.${id}&select=*&order=ordem.asc`, { headers: authHeaders() });
+        orc._itens = resItens.ok ? await resItens.json() : [];
+      }
+      return orc;
+    }catch(e){ return null; }
+  }
+
+  // Mostra a proposta de um orçamento já salvo (sem passar pelo formulário)
+  async function visualizarOrcamento(id){
+    const orc = await buscarOrcamentoCompleto(id);
+    if(!orc){ alert('Não deu pra carregar a proposta agora.'); return; }
+    const cliente = orc.clientes || {};
+    const itemsView = (orc._itens||[]).map(it=>({desc:it.descricao, tipo:it.tipo, qtd:Number(it.quantidade), valorUnit:Number(it.valor_unitario)}));
+    const modeloSelMap = {banco_horas:'banco', horas_avulsa:'avulsa', projeto_fechado:'projeto'};
+    const ctx = {
+      cliente: cliente.nome || '—',
+      categoria: orc.categoria,
+      textoPadrao: orc.texto_abertura || '',
+      pagamento: orc.condicoes_pagamento || '',
+      obrigCliente: orc.obrigacoes_cliente || '',
+      obrigEmpresa: orc.obrigacoes_empresa || '',
+      total: Number(orc.valor_total)||0,
+      items: itemsView,
+      escopo: orc.escopo || '',
+      validade: orc.validade_dias || 15,
+      modeloContratoSel: modeloSelMap[orc.modelo_contrato] || 'banco',
+      carga: orc.carga_horaria_contratada,
+      valorHora: orc.valor_hora,
+      horasEstimadas: orc.horas_estimadas
+    };
+    document.getElementById('docContent').innerHTML = construirDocumentoHTML(ctx);
+    window._pendingCliente = { nome: cliente.nome, telefone: cliente.telefone, documento: cliente.documento, email: cliente.email, emailsExtra: orc.emails_extra };
+    docContexto = { modo: 'view', orcamentoId: id, status: orc.status };
+    mostrarAcoesDoc('view', orc.status);
+    showScreen('doc');
+  }
+
+  function editarOrcamentoAtual(){
+    if(docContexto && docContexto.orcamentoId) editarOrcamento(docContexto.orcamentoId);
+  }
+
+  // Carrega um orçamento existente de volta no formulário "Novo orçamento" pra editar (só liberado na tela enquanto status = pendente)
+  async function editarOrcamento(id){
+    const orc = await buscarOrcamentoCompleto(id);
+    if(!orc){ alert('Não deu pra carregar a proposta agora.'); return; }
+    editingOrcamentoId = id;
+    const cliente = orc.clientes || {};
+
+    if(orc.categoria === 'comercio'){
+      items = (orc._itens||[]).map(it=>({desc:it.descricao, tipo:it.tipo, qtd:Number(it.quantidade), valorUnit:Number(it.valor_unitario)}));
+      if(!items.length) items = [{desc:'',tipo:'servico',qtd:1,valorUnit:0}];
+      setModo('comercio');
+    } else {
+      setModo('consultoria');
+    }
+
+    document.getElementById('clienteExistenteSelect').value = '';
+    document.getElementById('fClienteDocumento').value = cliente.documento || '';
+    document.getElementById('fClienteDocumentoHint').textContent = '';
+    document.getElementById('fCliente').value = cliente.nome || '';
+    document.getElementById('fClienteTelefone').value = cliente.telefone || '';
+    document.getElementById('fClienteEmail').value = cliente.email || '';
+    document.getElementById('fEmailsExtra').value = orc.emails_extra || '';
+    document.getElementById('fTextoPadrao').value = orc.texto_abertura || '';
+    document.getElementById('fPagamento').value = orc.condicoes_pagamento || '';
+    document.getElementById('fObrigCliente').value = orc.obrigacoes_cliente || '';
+    document.getElementById('fObrigEmpresa').value = orc.obrigacoes_empresa || '';
+
+    if(orc.categoria === 'comercio'){
+      renderItems();
+    } else {
+      document.getElementById('fEscopo').value = orc.escopo || '';
+      document.getElementById('fValidade').value = orc.validade_dias || 15;
+      const modeloMap = {banco_horas:'banco', horas_avulsa:'avulsa', projeto_fechado:'projeto'};
+      setModeloContrato(modeloMap[orc.modelo_contrato] || 'banco');
+      if(orc.modelo_contrato==='banco_horas'){
+        document.getElementById('fCargaHoraria').value = orc.carga_horaria_contratada || '';
+        document.getElementById('fValorHoraBanco').value = orc.valor_hora || '';
+      } else if(orc.modelo_contrato==='horas_avulsa'){
+        document.getElementById('fValorHoraCons').value = orc.valor_hora || '';
+        document.getElementById('fHorasEstCons').value = orc.horas_estimadas || '';
+      } else {
+        document.getElementById('fValorProjeto').value = orc.valor_projeto || '';
+      }
+    }
+    recalcTotal();
+    showScreen('novo');
   }
 
   function baixarPdf(){
@@ -1989,31 +2136,50 @@ async function concluirCadastroGoogle(){
   async function salvarOrcamento(enviarAgora){
     const btn = enviarAgora ? document.getElementById('enviarOrcBtn') : document.getElementById('salvarRascunhoBtn');
     const textoOriginal = btn.textContent;
-    if(await bloqueadoPorLimiteFree('orcamentos', 'orçamento')) return;
+    const estaEditando = !!editingOrcamentoId;
+    if(!estaEditando && await bloqueadoPorLimiteFree('orcamentos', 'orçamento')) return;
     btn.disabled = true; btn.textContent = enviarAgora ? 'Enviando...' : 'Salvando...';
     try{
-      const clienteId = await encontrarOuCriarCliente(window._pendingCliente.nome, window._pendingCliente.telefone, window._pendingCliente.documento, window._pendingCliente.email);
-      const payload = Object.assign({ empresa_id: empresaId, cliente_id: clienteId }, window._pendingPayload);
-      if(window._pendingCliente.emailsExtra) payload.emails_extra = window._pendingCliente.emailsExtra;
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos`, {
-        method:'POST', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
-      });
-      if(!res.ok) throw new Error('falhou');
-      const rows = await res.json();
-      const orcamentoId = rows[0].id;
-      if(modoAtual==='comercio'){
-        const itensPayload = items.filter(it=>it.desc).map((it,i)=>({ orcamento_id: orcamentoId, descricao: it.desc, tipo: it.tipo, quantidade: it.qtd, valor_unitario: it.valorUnit, ordem: i }));
-        if(itensPayload.length){
-          await fetch(`${SUPABASE_URL}/rest/v1/itens_orcamento`, { method:'POST', headers: authHeaders(), body: JSON.stringify(itensPayload) });
+      let orcamentoId;
+      if(estaEditando){
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?id=eq.${editingOrcamentoId}`, {
+          method:'PATCH', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(window._pendingPayload)
+        });
+        if(!res.ok) throw new Error('falhou');
+        const rows = await res.json();
+        orcamentoId = rows[0].id;
+        if(modoAtual==='comercio'){
+          await fetch(`${SUPABASE_URL}/rest/v1/itens_orcamento?orcamento_id=eq.${orcamentoId}`, { method:'DELETE', headers: authHeaders() });
+          const itensPayload = items.filter(it=>it.desc).map((it,i)=>({ orcamento_id: orcamentoId, descricao: it.desc, tipo: it.tipo, quantidade: it.qtd, valor_unitario: it.valorUnit, ordem: i }));
+          if(itensPayload.length){
+            await fetch(`${SUPABASE_URL}/rest/v1/itens_orcamento`, { method:'POST', headers: authHeaders(), body: JSON.stringify(itensPayload) });
+          }
+        }
+        editingOrcamentoId = null;
+      } else {
+        const clienteId = await encontrarOuCriarCliente(window._pendingCliente.nome, window._pendingCliente.telefone, window._pendingCliente.documento, window._pendingCliente.email);
+        const payload = Object.assign({ empresa_id: empresaId, cliente_id: clienteId }, window._pendingPayload);
+        if(window._pendingCliente.emailsExtra) payload.emails_extra = window._pendingCliente.emailsExtra;
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos`, {
+          method:'POST', headers: authHeaders({'Prefer':'return=representation'}), body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error('falhou');
+        const rows = await res.json();
+        orcamentoId = rows[0].id;
+        if(modoAtual==='comercio'){
+          const itensPayload = items.filter(it=>it.desc).map((it,i)=>({ orcamento_id: orcamentoId, descricao: it.desc, tipo: it.tipo, quantidade: it.qtd, valor_unitario: it.valorUnit, ordem: i }));
+          if(itensPayload.length){
+            await fetch(`${SUPABASE_URL}/rest/v1/itens_orcamento`, { method:'POST', headers: authHeaders(), body: JSON.stringify(itensPayload) });
+          }
         }
       }
       btn.disabled = false; btn.textContent = textoOriginal;
       showScreen('orcamentos');
       if(enviarAgora){
-        const ok = await chamarEnviarOrcamento(orcamentoId, window._pendingCliente.emailsExtra);
+        const ok = await chamarEnviarOrcamento(orcamentoId, window._pendingCliente ? window._pendingCliente.emailsExtra : null);
         alert(ok ? 'Orçamento enviado! WhatsApp (e e-mail, se configurado) saem em instantes.' : 'Orçamento salvo, mas não deu pra enviar agora — tenta de novo na tela do orçamento.');
       } else {
-        alert('Orçamento salvo como rascunho. Quando quiser, abre ele na lista e manda enviar.');
+        alert(estaEditando ? 'Alterações salvas.' : 'Orçamento salvo como rascunho. Quando quiser, abre ele na lista e manda enviar.');
       }
     }catch(e){
       btn.disabled = false; btn.textContent = textoOriginal;
