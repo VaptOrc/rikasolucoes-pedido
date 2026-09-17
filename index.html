@@ -23,6 +23,10 @@
   .main-col{flex:1;display:flex;flex-direction:column;min-width:0;}
   .sidebar{display:none;}
 
+  /* Tela de login: nenhuma barra de menu, nem no mobile nem no PC */
+  body.tela-login header{display:none;}
+  body.tela-login .sidebar{display:none !important;}
+
   header{background:var(--ink);color:var(--white);padding:20px 18px 16px;flex-shrink:0;}
   header .top-row{display:flex;align-items:center;gap:10px;}
   header .back{background:none;border:none;color:var(--white);font-size:20px;cursor:pointer;padding:0 4px 0 0;line-height:1;opacity:.85;}
@@ -181,7 +185,7 @@
   }
 </style>
 </head>
-<body>
+<body class="tela-login">
 
 <div id="app">
   <div class="sidebar" id="sidebar">
@@ -812,6 +816,7 @@
   function showScreen(name, push=true){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+name).classList.add('active');
+    document.body.classList.toggle('tela-login', name==='login');
     if(name==='home'){
       document.getElementById('screenTitle').textContent = 'Olá, ' + (company.nome || 'bem-vindo') + '!';
       document.getElementById('screenSubtitle').textContent = 'Aqui está o resumo de hoje.';
