@@ -673,6 +673,7 @@
 
     <!-- DOCUMENTO GERADO -->
     <section class="screen" id="screen-doc">
+      <div class="hint" id="docModoAviso" style="display:none;margin-bottom:10px;font-weight:600;"></div>
       <div class="doc-paper" id="docContent"></div>
       <div class="doc-actions" id="docActionsCreate">
         <button class="btn-ghost" onclick="showScreen('novo')">Editar</button>
@@ -741,6 +742,7 @@
     'plano-full': ['Plano Full', 'libere o VaptOrc sem limites'],
   };
   const tabScreens = ['home','orcamentos','clientes','relatorios'];
+  console.log('[VaptOrc] build 2026-09-16-17 (editar-vai-direto-pra-salvar)');
   let history = ['login'];
   let modoAtual = 'comercio';
   let modeloContratoAtual = 'banco';
@@ -2099,6 +2101,9 @@ async function concluirCadastroGoogle(){
     window._pendingPayload = payload;
     docContexto = { modo: 'novo' };
     mostrarAcoesDoc('novo');
+    const aviso = document.getElementById('docModoAviso');
+    aviso.style.display = editingOrcamentoId ? 'block' : 'none';
+    aviso.textContent = editingOrcamentoId ? '✏️ Editando — as alterações só valem depois de clicar em Salvar ou Enviar.' : '';
     showScreen('doc');
   }
 
@@ -2145,6 +2150,9 @@ async function concluirCadastroGoogle(){
     window._pendingCliente = { nome: cliente.nome, telefone: cliente.telefone, documento: cliente.documento, email: cliente.email, emailsExtra: orc.emails_extra };
     docContexto = { modo: 'view', orcamentoId: id, status: orc.status };
     mostrarAcoesDoc('view', orc.status);
+    const aviso = document.getElementById('docModoAviso');
+    aviso.style.display = 'block';
+    aviso.textContent = '👁️ Modo visualização — a proposta não pode ser alterada aqui.';
     showScreen('doc');
   }
 
