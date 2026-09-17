@@ -1168,8 +1168,31 @@ async function concluirCadastroGoogle(){
   function abrirPlanoFull(){
     showScreen('plano-full');
   }
-  function assinarPlanoFull(){
-    window.location.href = 'mailto:comercial@rikasolucoes.com.br?subject=' + encodeURIComponent('Quero assinar o Plano Full — ' + (company.nome||'')) + '&body=' + encodeURIComponent('Oi! Quero assinar o Plano Full do VaptOrc pra minha empresa ' + (company.nome||'') + '.');
+  async function assinarPlanoFull(){
+    const btn = document.getElementById('assinarPlanoFullBtn');
+    if(!company.email){
+      alert('Cadastre um e-mail em "Minha empresa" antes de assinar o Plano Full.');
+      return;
+    }
+    if(btn){ btn.disabled = true; btn.textContent = 'Gerando link de pagamento...'; }
+    try{
+      const res = await fetch('https://n8n.rikasolucoes.com.br/webhook/vaptorc-gerar-assinatura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresa_id: empresaId,
+          payer_email: company.email,
+          nome_empresa: company.nome || ''
+        })
+      });
+      if(!res.ok) throw new Error('Falha ao gerar assinatura');
+      const data = await res.json();
+      if(!data.checkout_url) throw new Error('Sem link de checkout na resposta');
+      window.location.href = data.checkout_url;
+    }catch(e){
+      alert('Não deu pra gerar o link de pagamento agora. Tente novamente em instantes ou fale com a gente: comercial@rikasolucoes.com.br');
+      if(btn){ btn.disabled = false; btn.textContent = 'Assinar Plano Full'; }
+    }
   }
 
   async function abrirAgenda(){
