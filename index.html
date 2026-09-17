@@ -232,7 +232,6 @@
       Administração
     </button>
     <div class="side-spacer"></div>
-    <button class="cta-full" onclick="openNewQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 5v14M5 12h14"/></svg> Novo orçamento</button>
     <div class="side-sair" onclick="confirmLogout()">SAIR</div>
   </div>
 
@@ -297,6 +296,9 @@
         <h2>Orçamentos</h2>
         <p id="homeResumo">Carregando seus orçamentos...</p>
       </div>
+      <p class="section-title">ÚLTIMOS ORÇAMENTOS</p>
+      <div id="homeUltimosOrcamentos"><div class="empty-state"><p>Carregando...</p></div></div>
+      <hr class="section-divider">
       <div class="grid">
         <div class="tile" onclick="showScreen('orcamentos')">
           <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6a1 1 0 0 1 1 1v1h1a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1V4a1 1 0 0 1 1-1Z"/><path d="M9 11h6M9 15h4"/></svg></div>
@@ -349,10 +351,6 @@
           <div class="desc">Empresas clientes do VaptOrc</div>
         </div>
       </div>
-      <hr class="section-divider">
-      <p class="section-title">ÚLTIMOS ORÇAMENTOS</p>
-      <div id="homeUltimosOrcamentos"><div class="empty-state"><p>Carregando...</p></div></div>
-      <button class="cta-full" onclick="openNewQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 5v14M5 12h14"/></svg> Novo orçamento</button>
     </section>
 
     <!-- ORÇAMENTOS -->
