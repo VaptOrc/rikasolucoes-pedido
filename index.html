@@ -139,13 +139,6 @@
   .btn-danger{background:var(--white);border:1px solid var(--red);color:var(--red);padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;width:100%;margin-top:10px;}
   .sig-img{max-height:46px;display:block;margin:6px 0;}
 
-  nav.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:8px 4px 10px;z-index:20;}
-  nav.tabbar button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--slate);padding:4px 0;}
-  nav.tabbar button svg{width:21px;height:21px;}
-  nav.tabbar button .label{font-size:10.5px;font-weight:500;}
-  nav.tabbar button.active{color:var(--ink);}
-  nav.tabbar button.active .label{font-weight:600;}
-
   #screen-login{padding-top:40px;max-width:360px;margin:0 auto;}
   #screen-login h2{text-align:center;margin-bottom:24px;}
   .login-toggle{display:flex;gap:8px;margin-top:14px;}
@@ -174,7 +167,6 @@
     .sidebar .side-sair{text-align:center;font-size:11.5px;letter-spacing:.5px;color:#8493AC;cursor:pointer;margin-top:14px;padding:6px;font-weight:600;}
     .sidebar .side-sair:hover{color:#fff;}
 
-    nav.tabbar{display:none;}
     header{background:transparent;color:var(--ink);padding:30px 36px 14px;border-bottom:1px solid var(--line);}
     header .subtitle{color:var(--slate);}
     header .back{color:var(--ink);}
@@ -188,7 +180,7 @@
 
 <div id="app">
   <div class="sidebar" id="sidebar">
-    <div class="side-brand">VaptOrc</div>
+    <div class="side-brand"><img src="./logo-vaptorc.png" alt="VaptOrc" style="max-width:140px;max-height:40px;display:block;"></div>
     <button data-nav="home" onclick="showScreen('home')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-9"/></svg>
       Início
@@ -255,7 +247,7 @@
 
     <!-- LOGIN -->
     <section class="screen active" id="screen-login">
-      <h2>VaptOrc</h2>
+      <img src="./logo-vaptorc.png" alt="VaptOrc" style="display:block;margin:0 auto 24px;max-width:200px;max-height:70px;">
       <div class="field-group">
         <label class="label">E-mail</label>
         <input type="email" id="loginEmail" placeholder="seuemail@exemplo.com">
@@ -706,24 +698,6 @@
 
   </main>
 
-  <nav class="tabbar" id="tabbar" style="display:none;">
-    <button class="tab active" data-tab="home" onclick="showScreen('home')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h4v-5h2v5h4a1 1 0 0 0 1-1v-9"/></svg>
-      <span class="label">Início</span>
-    </button>
-    <button class="tab" data-tab="orcamentos" onclick="showScreen('orcamentos')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6a1 1 0 0 1 1 1v1h1a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1V4a1 1 0 0 1 1-1Z"/><path d="M9 11h6M9 15h4"/></svg>
-      <span class="label">Orçamentos</span>
-    </button>
-    <button class="tab" data-tab="clientes" onclick="showScreen('clientes')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20c.6-3.4 3-5.4 5.5-5.4s4.9 2 5.5 5.4"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c2 .2 3.8 1.9 4.3 4.6"/></svg>
-      <span class="label">Clientes</span>
-    </button>
-    <button class="tab" data-tab="relatorios" onclick="showScreen('relatorios')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
-      <span class="label">Relatórios</span>
-    </button>
-  </nav>
   </div>
 </div>
 
@@ -834,9 +808,7 @@
       document.getElementById('screenSubtitle').textContent = titles[name][1];
     }
     document.getElementById('backBtn').style.display = (name!=='login' && name!=='bloqueado' && !tabScreens.includes(name)) ? 'inline-block' : 'none';
-    document.getElementById('tabbar').style.display = (name!=='login' && tabScreens.includes(name)) ? 'flex' : 'none';
     document.getElementById('headerLogoutBtn').style.display = (name!=='login' && name!=='bloqueado') ? 'inline-flex' : 'none';
-    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
     document.querySelectorAll('.sidebar button[data-nav]').forEach(b=>b.classList.toggle('active', b.dataset.nav===name));
     if(push && history[history.length-1] !== name){
       history.push(name);
