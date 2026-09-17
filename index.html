@@ -756,6 +756,8 @@
   let clientesSelectCache = [];
   let souSuperAdmin = false;
   let editingOrcamentoId = null;
+  let inatividadeTimer = null;
+  const TEMPO_LIMITE_INATIVIDADE_MS = 60 * 60 * 1000; // 1 hora
   let docContexto = { modo: 'novo' };
   const statusLabel = {pendente:'Pendente', aprovado:'Aprovado', andamento:'Em andamento', aguardando_pagamento:'Aguardando pagamento', concluido:'Concluído', garantia:'Garantia', cancelado:'Cancelado'};
   const statusOrdem = ['pendente','aguardando_aprovacao','aprovado','andamento','aguardando_pagamento','concluido','garantia','cancelado'];
@@ -1017,8 +1019,33 @@ async function concluirCadastroGoogle(){
     localStorage.removeItem('vaptorc_session');
     session = null; empresaId = null; company = {};
     history = ['login'];
+    pararTimerInatividade();
     showScreen('login', false);
   }
+
+  function resetTimerInatividade(){
+    if(!session) return;
+    clearTimeout(inatividadeTimer);
+    inatividadeTimer = setTimeout(() => {
+      if(session){
+        alert('Sua sessão foi encerrada por inatividade. Faça login novamente.');
+        logout();
+      }
+    }, TEMPO_LIMITE_INATIVIDADE_MS);
+  }
+
+  function iniciarTimerInatividade(){
+    resetTimerInatividade();
+  }
+
+  function pararTimerInatividade(){
+    clearTimeout(inatividadeTimer);
+    inatividadeTimer = null;
+  }
+
+  ['mousedown','mousemove','keydown','wheel','scroll','touchstart','click'].forEach(evt => {
+    document.addEventListener(evt, resetTimerInatividade, { passive: true });
+  });
 
   async function carregarContexto(){
     const res = await fetch(`${SUPABASE_URL}/rest/v1/usuarios?id=eq.${session.user_id}&select=empresa_id,papel`, { headers: authHeaders() });
@@ -1040,6 +1067,7 @@ async function concluirCadastroGoogle(){
   }
 
   async function irParaHomeOuBloqueio(){
+    iniciarTimerInatividade();
     if(company.status_assinatura === 'bloqueada' && !souSuperAdmin){
       history = ['bloqueado'];
       showScreen('bloqueado', false);
