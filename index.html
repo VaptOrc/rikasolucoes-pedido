@@ -29,6 +29,8 @@
   header .back:hover{opacity:1;}
   header h1{margin:0;font-size:19px;font-weight:600;letter-spacing:.2px;}
   header .subtitle{margin:4px 0 0;font-size:12.5px;color:#B9C3D6;}
+  header .header-logout{margin-left:auto;background:none;border:none;color:inherit;opacity:.75;cursor:pointer;padding:6px;line-height:1;flex-shrink:0;display:inline-flex;align-items:center;}
+  header .header-logout:hover{opacity:1;}
 
   main{flex:1;overflow-y:auto;padding:18px 18px 90px;}
   .screen{display:none;}
@@ -243,6 +245,9 @@
         <h1 id="screenTitle">VaptOrc</h1>
         <div class="subtitle" id="screenSubtitle">Monte o Orçamento Certo, Rapidinho</div>
       </div>
+      <button class="header-logout" id="headerLogoutBtn" onclick="confirmLogout()" title="Sair" style="display:none;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
     </div>
   </header>
 
@@ -830,6 +835,7 @@
     }
     document.getElementById('backBtn').style.display = (name!=='login' && name!=='bloqueado' && !tabScreens.includes(name)) ? 'inline-block' : 'none';
     document.getElementById('tabbar').style.display = (name!=='login' && tabScreens.includes(name)) ? 'flex' : 'none';
+    document.getElementById('headerLogoutBtn').style.display = (name!=='login' && name!=='bloqueado') ? 'inline-flex' : 'none';
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
     document.querySelectorAll('.sidebar button[data-nav]').forEach(b=>b.classList.toggle('active', b.dataset.nav===name));
     if(push && history[history.length-1] !== name){
