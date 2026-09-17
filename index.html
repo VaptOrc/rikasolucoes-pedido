@@ -140,7 +140,12 @@
   .sig-img{max-height:46px;display:block;margin:6px 0;}
 
   #screen-login{padding-top:40px;max-width:360px;margin:0 auto;}
-  #screen-login h2{text-align:center;margin-bottom:24px;}
+  .login-brand{text-align:center;margin-bottom:28px;}
+  .login-brand .login-logo{display:block;margin:0 auto 14px;max-width:180px;max-height:64px;}
+  .login-brand .login-title{margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;letter-spacing:.5px;color:var(--ink);}
+  .login-brand .login-subtitle{margin:0;font-size:12.5px;color:var(--slate);}
+  .login-divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--slate);font-size:11.5px;}
+  .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--line);}
   .login-toggle{display:flex;gap:8px;margin-top:14px;}
   .login-toggle button{flex:1;}
   .login-msg{text-align:center;margin-top:14px;font-size:12.5px;color:var(--slate);min-height:16px;}
@@ -247,7 +252,11 @@
 
     <!-- LOGIN -->
     <section class="screen active" id="screen-login">
-      <img src="./logo-vaptorc.png" alt="VaptOrc" style="display:block;margin:0 auto 24px;max-width:200px;max-height:70px;">
+      <div class="login-brand">
+        <img src="./logo-vaptorc.png" alt="VaptOrc" class="login-logo">
+        <h2 class="login-title">VAPTORC</h2>
+        <p class="login-subtitle">Acesse o sistema de orçamentos e clientes</p>
+      </div>
       <div class="field-group">
         <label class="label">E-mail</label>
         <input type="email" id="loginEmail" placeholder="seuemail@exemplo.com">
@@ -260,7 +269,11 @@
         <label class="label">Nome da empresa</label>
         <input type="text" id="loginNomeEmpresa" placeholder="Nome da sua empresa">
       </div>
-      <button class="btn-ghost" style="width:100%;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="loginComGoogle()">
+      <button class="cta-full" style="margin-top:4px;" onclick="fazerLogin()">ENTRAR</button>
+
+      <div class="login-divider"><span>ou</span></div>
+
+      <button class="btn-ghost" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="loginComGoogle()">
         <svg width="18" height="18" viewBox="0 0 48 48" style="flex:none;">
           <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
           <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
@@ -270,10 +283,8 @@
         Continuar com Google
       </button>
       <button class="cta-full" id="concluirGoogleBtn" style="display:none;margin-top:10px;" onclick="concluirCadastroGoogle()">Concluir cadastro</button>
-      <div class="login-toggle">
-        <button class="cta-full" style="flex:1;margin-top:0;" onclick="fazerLogin()">Entrar</button>
-        <button class="btn-ghost" style="flex:1;" onclick="fazerCadastro()">Criar conta</button>
-      </div>
+      <button class="btn-ghost" style="width:100%;margin-top:10px;" onclick="fazerCadastro()">Criar conta</button>
+
       <div class="logout-link" onclick="esqueciSenha()">Esqueci minha senha</div>
       <div class="field-group" id="grupoNovaSenha" style="display:none;margin-top:16px;">
         <label class="label">Nova senha</label>
@@ -285,6 +296,7 @@
         Ao continuar, você concorda com os <a href="./termos.html" target="_blank" rel="noopener" style="text-decoration:underline;">Termos de Uso</a> e a <a href="./privacidade.html" target="_blank" rel="noopener" style="text-decoration:underline;">Política de Privacidade</a>.
       </div>
     </section>
+
 
     <!-- HOME -->
     <section class="screen" id="screen-home">
