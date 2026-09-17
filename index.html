@@ -1502,6 +1502,7 @@ async function concluirCadastroGoogle(){
     }catch(e){ alert('Não deu pra excluir — capaz de já ter orçamento vinculado a esse cliente.'); }
   }
 
+  let clienteParaPreselecionar = null;
   async function popularClienteSelect(){
     try{
       const res = await fetch(`${SUPABASE_URL}/rest/v1/clientes?empresa_id=eq.${empresaId}&select=id,nome,telefone,documento,email&order=nome.asc`, { headers: authHeaders() });
@@ -1510,6 +1511,10 @@ async function concluirCadastroGoogle(){
     const sel = document.getElementById('clienteExistenteSelect');
     if(!sel) return;
     sel.innerHTML = '<option value="">Novo cliente...</option>' + clientesSelectCache.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+    if(clienteParaPreselecionar){
+      sel.value = clienteParaPreselecionar;
+      clienteParaPreselecionar = null;
+    }
   }
   function preencherClienteExistente(){
     const id = document.getElementById('clienteExistenteSelect').value;
@@ -1945,6 +1950,7 @@ async function concluirCadastroGoogle(){
 
   function resetForm(){
     editingOrcamentoId = null;
+    clienteParaPreselecionar = null;
     document.getElementById('clienteExistenteSelect').value = '';
     document.getElementById('fClienteDocumento').value = '';
     document.getElementById('fClienteDocumentoHint').textContent = 'Se for CNPJ, preenchemos o nome automaticamente.';
@@ -2162,6 +2168,7 @@ async function concluirCadastroGoogle(){
     }
 
     document.getElementById('clienteExistenteSelect').value = '';
+    clienteParaPreselecionar = cliente.id || null;
     document.getElementById('fClienteDocumento').value = cliente.documento || '';
     document.getElementById('fClienteDocumentoHint').textContent = '';
     document.getElementById('fCliente').value = cliente.nome || '';
