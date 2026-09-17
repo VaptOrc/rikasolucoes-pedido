@@ -58,7 +58,7 @@
 
   .quote-card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--slate);border-radius:10px;padding:13px 14px;margin-bottom:10px;cursor:pointer;position:relative;}
   .quote-card.status-pendente{border-left-color:var(--amber);}
-  .quote-card.status-aprovado{border-left-color:var(--blue-status);}
+  .quote-card.status-aprovado{border-left-color:var(--green);}
   .quote-card.status-andamento{border-left-color:var(--blueprint);}
   .quote-card.status-concluido{border-left-color:var(--green);}
   .quote-card.status-cancelado{border-left-color:var(--red);}
@@ -70,7 +70,7 @@
   .quote-card .valor{font-size:14px;font-weight:600;}
   .badge{font-size:11px;padding:3px 9px;border-radius:999px;font-weight:500;}
   .badge.status-pendente{background:#FBF0DA;color:#8A6314;}
-  .badge.status-aprovado{background:#E1EAF3;color:#2C4E71;}
+  .badge.status-aprovado{background:#E1F0E6;color:#2C6B45;}
   .badge.status-andamento{background:#DCE7F1;color:#264A6E;}
   .badge.status-concluido{background:#E1F0E6;color:#2C6B45;}
   .badge.status-cancelado{background:#F3E1DF;color:#8A362D;}
@@ -79,6 +79,12 @@
 
   .empty-state{text-align:center;padding:40px 20px;color:var(--slate);}
   .empty-state p{font-size:13px;line-height:1.5;}
+
+  .mini-table-row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px;cursor:pointer;}
+  .mini-table-row:hover{border-color:var(--blueprint);}
+  .mini-table-main{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px;}
+  .mini-table-main .cliente{font-size:13.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mini-table-sub{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--slate);}
 
   .simple-item{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:9px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
   .simple-item span.sub{color:var(--slate);font-size:12px;}
@@ -132,9 +138,6 @@
   .sig-img{max-height:46px;display:block;margin:6px 0;}
 
   nav.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:8px 4px 10px;z-index:20;}
-  #app:has(#screen-login.active) #headerLogoutBtn,
-  #app:has(#screen-bloqueado.active) #headerLogoutBtn{display:none !important;}
-  #app:not(:has(#screen-login.active)):not(:has(#screen-bloqueado.active)) #headerLogoutBtn{display:inline-block !important;}
   nav.tabbar button{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--slate);padding:4px 0;}
   nav.tabbar button svg{width:21px;height:21px;}
   nav.tabbar button .label{font-size:10.5px;font-weight:500;}
@@ -166,12 +169,14 @@
     .sidebar button:hover{color:#fff;}
     .sidebar .side-spacer{flex:1;}
     .sidebar .cta-full{margin-top:0;}
+    .sidebar .side-sair{text-align:center;font-size:11.5px;letter-spacing:.5px;color:#8493AC;cursor:pointer;margin-top:14px;padding:6px;font-weight:600;}
+    .sidebar .side-sair:hover{color:#fff;}
 
     nav.tabbar{display:none;}
-    header{background:transparent;color:var(--ink);padding:30px 32px 14px;border-bottom:1px solid var(--line);}
+    header{background:transparent;color:var(--ink);padding:30px 36px 14px;border-bottom:1px solid var(--line);}
     header .subtitle{color:var(--slate);}
     header .back{color:var(--ink);}
-    main{max-width:760px;margin:0 auto;width:100%;padding:28px 32px 60px;}
+    main{max-width:880px;margin:0 auto;width:100%;padding:28px 36px 60px;}
     #screen-login{margin-top:60px;}
     .grid{grid-template-columns:repeat(3,1fr);}
   }
@@ -227,7 +232,8 @@
       Administração
     </button>
     <div class="side-spacer"></div>
-    <button class="cta-full" onclick="openNewQuote()">+ Novo orçamento</button>
+    <button class="cta-full" onclick="openNewQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 5v14M5 12h14"/></svg> Novo orçamento</button>
+    <div class="side-sair" onclick="confirmLogout()">SAIR</div>
   </div>
 
   <div class="main-col">
@@ -287,8 +293,8 @@
     <!-- HOME -->
     <section class="screen" id="screen-home">
       <div class="home-hero">
-        <p class="eyebrow" id="homeEyebrow"></p>
-        <h2>Seja Bem vindo de volta</h2>
+        <p class="eyebrow" id="homeEyebrow">Visão geral</p>
+        <h2>Orçamentos</h2>
         <p id="homeResumo">Carregando seus orçamentos...</p>
       </div>
       <div class="grid">
@@ -343,14 +349,17 @@
           <div class="desc">Empresas clientes do VaptOrc</div>
         </div>
       </div>
-      <button class="cta-full" onclick="openNewQuote()">+ Novo orçamento</button>
+      <hr class="section-divider">
+      <p class="section-title">ÚLTIMOS ORÇAMENTOS</p>
+      <div id="homeUltimosOrcamentos"><div class="empty-state"><p>Carregando...</p></div></div>
+      <button class="cta-full" onclick="openNewQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 5v14M5 12h14"/></svg> Novo orçamento</button>
     </section>
 
     <!-- ORÇAMENTOS -->
     <section class="screen" id="screen-orcamentos">
       <div class="filters" id="filterChips"></div>
       <div id="quoteList"><div class="empty-state"><p>Carregando...</p></div></div>
-      <button class="cta-full" onclick="openNewQuote()">+ Novo orçamento</button>
+      <button class="cta-full" onclick="openNewQuote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 5v14M5 12h14"/></svg> Novo orçamento</button>
     </section>
 
     <!-- DETALHE ORÇAMENTO -->
@@ -511,7 +520,7 @@
         <h2>Acesso temporariamente bloqueado</h2>
         <p>Identificamos uma pendência no pagamento da assinatura do VaptOrc. Entre em contato pra regularizar e liberar o acesso de novo.</p>
       </div>
-      <div class="logout-link" onclick="logout()">Sair da conta</div>
+      <div class="logout-link" onclick="logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg> Sair da conta</div>
     </section>
 
     <!-- ADMINISTRAÇÃO (só super_admin) -->
@@ -561,7 +570,7 @@
         <div class="hint">Aparece no rodapé de todo orçamento, acima do nome da empresa.</div>
       </div>
       <button class="cta-full" onclick="salvarEmpresa()">Salvar dados da empresa</button>
-      <div class="logout-link" onclick="logout()">Sair da conta</div>
+      <div class="logout-link" onclick="logout()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg> Sair da conta</div>
     </section>
 
     <!-- NOVO ORÇAMENTO -->
@@ -676,16 +685,16 @@
       <div class="hint" id="docModoAviso" style="display:none;margin-bottom:10px;font-weight:600;"></div>
       <div class="doc-paper" id="docContent"></div>
       <div class="doc-actions" id="docActionsCreate">
-        <button class="btn-ghost" onclick="showScreen('novo')">Editar</button>
-        <button class="btn-ghost" onclick="baixarPdf()">Baixar PDF</button>
+        <button class="btn-ghost" onclick="showScreen('novo')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar</button>
+        <button class="btn-ghost" onclick="baixarPdf()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Baixar PDF</button>
       </div>
       <div class="doc-actions" id="docActionsCreate2">
-        <button class="btn-ghost" id="salvarRascunhoBtn" onclick="salvarOrcamento(false)">Salvar</button>
-        <button class="cta-full" id="enviarOrcBtn" onclick="salvarOrcamento(true)" style="margin-top:0;">Enviar</button>
+        <button class="btn-ghost" id="salvarRascunhoBtn" onclick="salvarOrcamento(false)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Salvar</button>
+        <button class="cta-full" id="enviarOrcBtn" onclick="salvarOrcamento(true)" style="margin-top:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg> Enviar</button>
       </div>
       <div class="doc-actions" id="docActionsView" style="display:none;">
-        <button class="btn-ghost" onclick="baixarPdf()">Baixar PDF</button>
-        <button class="btn-ghost" id="docViewEditarBtn" onclick="editarOrcamentoAtual()" style="display:none;">Editar</button>
+        <button class="btn-ghost" onclick="baixarPdf()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Baixar PDF</button>
+        <button class="btn-ghost" id="docViewEditarBtn" onclick="editarOrcamentoAtual()" style="display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar</button>
       </div>
       <div class="doc-actions" id="docActionsView2" style="display:none;">
         <button class="btn-ghost" style="width:100%;" onclick="goBack()">Voltar</button>
@@ -765,6 +774,17 @@
   const statusOrdem = ['pendente','aguardando_aprovacao','aprovado','andamento','aguardando_pagamento','concluido','garantia','cancelado'];
   const statusConfirmados = ['aprovado','andamento','aguardando_pagamento','concluido','garantia'];
   const tipoItemLabel = {servico:'Serviço', material:'Peça'};
+  const svgIcon = (path, extra) => `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;">${extra||''}${path}</svg>`;
+  const iconEditar = svgIcon('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>');
+  const iconOlho = svgIcon('<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>');
+  const iconMais = svgIcon('<path d="M12 5v14M5 12h14"/>');
+  const iconEnviar = svgIcon('<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>');
+  const iconSalvar = svgIcon('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/>');
+  const iconDownload = svgIcon('<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>');
+  const iconLock = svgIcon('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>');
+  const iconUnlock = svgIcon('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>');
+  const iconLixo = svgIcon('<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>');
+  const iconSair = svgIcon('<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>');
 
   function authHeaders(extra){
     return Object.assign({
@@ -800,25 +820,13 @@
     if(confirm('Sair da conta?')) logout();
   }
 
-  (function(){
-    const topRow = document.querySelector('.top-row');
-    if(topRow){
-      const btn = document.createElement('button');
-      btn.className = 'back';
-      btn.id = 'headerLogoutBtn';
-      btn.title = 'Sair';
-      btn.style.marginLeft = 'auto';
-      btn.style.display = 'none';
-      btn.textContent = '⏻';
-      btn.onclick = confirmLogout;
-      topRow.appendChild(btn);
-    }
-  })();
-
   function showScreen(name, push=true){
     document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
     document.getElementById('screen-'+name).classList.add('active');
-    if(titles[name]){
+    if(name==='home'){
+      document.getElementById('screenTitle').textContent = 'Olá, ' + (company.nome || 'bem-vindo') + '!';
+      document.getElementById('screenSubtitle').textContent = 'Aqui está o resumo de hoje.';
+    } else if(titles[name]){
       document.getElementById('screenTitle').textContent = titles[name][0];
       document.getElementById('screenSubtitle').textContent = titles[name][1];
     }
@@ -826,7 +834,11 @@
     document.getElementById('tabbar').style.display = (name!=='login' && tabScreens.includes(name)) ? 'flex' : 'none';
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
     document.querySelectorAll('.sidebar button[data-nav]').forEach(b=>b.classList.toggle('active', b.dataset.nav===name));
-    if(push && history[history.length-1] !== name) history.push(name);
+    if(push && history[history.length-1] !== name){
+      history.push(name);
+      try{ window.history.pushState({vaptorcNav:true}, '', location.pathname); }catch(e){}
+    }
+    if(name==='home'){ atualizarResumoHome(); carregarUltimosOrcamentosHome(); }
     if(name==='orcamentos') carregarOrcamentos();
     if(name==='clientes') carregarClientes();
     if(name==='empresa') preencherFormEmpresa();
@@ -835,11 +847,19 @@
     if(name==='novo'){ popularCatalogoSelect(); popularClienteSelect(); }
     if(name==='admin') carregarAdmin();
   }
-  function goBack(){
-    history.pop();
-    const prev = history[history.length-1] || 'home';
-    showScreen(prev, false);
+  function voltarInterno(){
+    if(history.length > 1){
+      history.pop();
+      const prev = history[history.length-1] || 'home';
+      showScreen(prev, false);
+    }
   }
+  function goBack(){
+    window.history.back();
+  }
+  window.addEventListener('popstate', function(){
+    voltarInterno();
+  });
 
   // ===================== AUTH =====================
   function setLoginMsg(msg){
@@ -1021,6 +1041,7 @@ async function concluirCadastroGoogle(){
     localStorage.removeItem('vaptorc_session');
     session = null; empresaId = null; company = {};
     history = ['login'];
+    try{ window.history.replaceState({vaptorcNav:true}, '', location.pathname); }catch(e){}
     pararTimerInatividade();
     showScreen('login', false);
   }
@@ -1070,13 +1091,13 @@ async function concluirCadastroGoogle(){
 
   async function irParaHomeOuBloqueio(){
     iniciarTimerInatividade();
+    try{ window.history.replaceState({vaptorcNav:true}, '', location.pathname); }catch(e){}
     if(company.status_assinatura === 'bloqueada' && !souSuperAdmin){
       history = ['bloqueado'];
       showScreen('bloqueado', false);
     } else {
       history = ['home'];
       showScreen('home', false);
-      await atualizarResumoHome();
     }
   }
 
@@ -1114,8 +1135,34 @@ async function concluirCadastroGoogle(){
   showScreen('login', false);
 }
 
+  async function abrirOrcamentoDaHome(id){
+    if(!orcamentosCache.length){ await carregarOrcamentos(); }
+    abrirDetalheOrcamento(id);
+  }
+
+  async function carregarUltimosOrcamentosHome(){
+    const box = document.getElementById('homeUltimosOrcamentos');
+    if(!box) return;
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=id,numero,status,valor_total,created_at,clientes(nome)&order=created_at.desc&limit=5`, { headers: authHeaders() });
+      const rows = res.ok ? await res.json() : [];
+      if(!rows.length){ box.innerHTML = '<div class="empty-state"><p>Nenhum orçamento criado ainda.</p></div>'; return; }
+      box.innerHTML = rows.map(r=>`
+        <div class="mini-table-row" onclick="abrirOrcamentoDaHome('${r.id}')">
+          <div class="mini-table-main">
+            <span class="cliente">${r.clientes ? r.clientes.nome : ('ORÇ-'+String(r.numero).padStart(3,'0'))}</span>
+            <span class="badge status-${r.status}">${statusLabel[r.status]||r.status}</span>
+          </div>
+          <div class="mini-table-sub">
+            <span class="mono">R$ ${Number(r.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
+            <span>${new Date(r.created_at).toLocaleDateString('pt-BR')}</span>
+          </div>
+        </div>
+      `).join('');
+    }catch(e){ box.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
+  }
+
   async function atualizarResumoHome(){
-    document.getElementById('homeEyebrow').textContent = company.nome || '';
     const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=status`, { headers: authHeaders() });
     if(!res.ok) return;
     const rows = await res.json();
@@ -1389,9 +1436,10 @@ async function concluirCadastroGoogle(){
         <div class="field-group"><label class="label">Valor</label><input type="text" value="R$ ${Number(q.valor_total).toLocaleString('pt-BR',{minimumFractionDigits:2})}" disabled></div>
       </div>
       ${envioHtml}
-      <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <button class="btn-ghost" style="flex:1;" onclick="visualizarOrcamento('${id}')">Ver proposta</button>
-        ${q.status==='pendente' ? `<button class="btn-ghost" style="flex:1;" onclick="editarOrcamento('${id}')">Editar</button>` : ''}
+      <div style="margin-bottom:16px;">
+        ${q.status==='pendente'
+          ? `<button class="btn-ghost" style="width:100%;" onclick="editarOrcamento('${id}')">${iconEditar} Ver e editar proposta</button>`
+          : `<button class="btn-ghost" style="width:100%;" onclick="visualizarOrcamento('${id}')">${iconOlho} Ver proposta</button>`}
       </div>
       <div class="field-group">
         <label class="label">Status</label>
@@ -1725,18 +1773,18 @@ async function concluirCadastroGoogle(){
       const rows = res.ok ? await res.json() : [];
       if(!rows.length){ list.innerHTML = '<div class="empty-state"><p>Nenhuma empresa ainda.</p></div>'; return; }
       list.innerHTML = rows.map(e=>`
-        <div class="simple-item" style="cursor:default;flex-direction:column;align-items:stretch;gap:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div>${e.nome}<br><span class="sub">${e.email||'sem e-mail'} · <strong>${e.status_assinatura==='ativa'?'Ativa':'Bloqueada'}</strong></span></div>
-            <button class="btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="alternarStatusEmpresa('${e.id}','${e.status_assinatura}')">${e.status_assinatura==='ativa' ? 'Bloquear' : 'Desbloquear'}</button>
+        <div class="simple-item" style="cursor:default;flex-direction:column;align-items:stretch;gap:12px;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="min-width:0;">${e.nome}<br><span class="sub">${e.email||'sem e-mail'} · <strong>${e.status_assinatura==='ativa'?'Ativa':'Bloqueada'}</strong></span></div>
+            <button class="btn-ghost" style="padding:8px 12px;font-size:12px;flex-shrink:0;" onclick="alternarStatusEmpresa('${e.id}','${e.status_assinatura}')">${e.status_assinatura==='ativa' ? iconLock+'Bloquear' : iconUnlock+'Desbloquear'}</button>
           </div>
-          <div style="display:flex;gap:6px;">
-            <input type="number" min="0" placeholder="Valor mensal (R$)" value="${e.valor_mensalidade||''}" id="valorMensal-${e.id}" style="flex:1;">
-            <select id="plano-${e.id}" style="flex:0 0 88px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="number" min="0" placeholder="Valor mensal (R$)" value="${e.valor_mensalidade||''}" id="valorMensal-${e.id}" style="flex:1 1 120px;">
+            <select id="plano-${e.id}" style="flex:0 0 90px;">
               <option value="free" ${e.plano!=='full'?'selected':''}>Free</option>
               <option value="full" ${e.plano==='full'?'selected':''}>Full</option>
             </select>
-            <button class="btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="salvarValorMensal('${e.id}')">Salvar</button>
+            <button class="btn-ghost" style="padding:8px 12px;font-size:12px;flex-shrink:0;" onclick="salvarValorMensal('${e.id}')">${iconSalvar}Salvar</button>
           </div>
         </div>
       `).join('');
