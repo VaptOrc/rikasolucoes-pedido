@@ -520,8 +520,10 @@
         <input type="file" id="osAnexosInput" multiple accept="image/png, image/jpeg, application/pdf" onchange="selecionarOsAnexos(event)" style="display:none;">
         <button type="button" class="cta-full" style="background:#5a5a52;" onclick="document.getElementById('osAnexosInput').click()">📎 Anexar documentos</button>
         <div id="osAnexosSelecionados"></div>
+        <div id="osAnexosExistentes"></div>
       </div>
-      <button class="cta-full" onclick="salvarOS()">Salvar OS</button>
+      <button class="cta-full" id="osSalvarBtn" onclick="salvarOS()">Salvar OS</button>
+      <button class="btn-ghost" id="osCancelarBtn" style="display:none;width:100%;margin-top:8px;" onclick="cancelarEdicaoOS()">Cancelar edição</button>
       <hr class="section-divider">
       <p class="section-title">HISTÓRICO</p>
       <div id="osList"><div class="hint">Selecione um cliente pra ver o histórico.</div></div>
@@ -1683,6 +1685,9 @@ async function concluirCadastroGoogle(){
   let osContratoObj = null;
   let osConsumidoAtual = 0;
   let osAnexosSelecionados = [];
+  let osListCache = [];
+  let editingOsId = null;
+  let editingOsAnexosExistentes = [];
 
   function selecionarOsAnexos(event){
     osAnexosSelecionados = osAnexosSelecionados.concat(Array.from(event.target.files || []));
@@ -1732,6 +1737,11 @@ async function concluirCadastroGoogle(){
     document.getElementById('osSaldoBox').innerHTML = '';
     document.getElementById('osList').innerHTML = '<div class="hint">Selecione um cliente pra ver o histórico.</div>';
     osContratoAtual = null;
+    editingOsId = null;
+    editingOsAnexosExistentes = [];
+    document.getElementById('osAnexosExistentes').innerHTML = '';
+    document.getElementById('osSalvarBtn').textContent = 'Salvar OS';
+    document.getElementById('osCancelarBtn').style.display = 'none';
   }
 
   async function carregarOS(){
@@ -1767,10 +1777,17 @@ async function concluirCadastroGoogle(){
         saldoBox.innerHTML = '<div class="hint" style="margin-bottom:10px;">Esse cliente não tem contrato de banco de horas ativo — a OS será registrada sem abater saldo.</div>';
       }
 
+      osListCache = listaOS;
       list.innerHTML = listaOS.length ? listaOS.map(o=>`
-        <div class="simple-item" style="cursor:default;">
-          <div>${new Date(o.data+'T00:00:00').toLocaleDateString('pt-BR')}${o.hora ? ' às '+o.hora.slice(0,5) : ''}<br><span class="sub">${o.descricao}</span>${(o.anexos&&o.anexos.length) ? '<br>'+o.anexos.map(a=>`<a href="${a.url}" target="_blank" rel="noopener" class="sub" style="text-decoration:underline;">📎 ${a.nome}</a>`).join(' · ') : ''}</div>
-          <span class="mono">${o.horas_gastas}h</span>
+        <div class="simple-item" onclick="abrirEditarOS('${o.id}')">
+          <div>${new Date(o.data+'T00:00:00').toLocaleDateString('pt-BR')}${o.hora ? ' às '+o.hora.slice(0,5) : ''}<br><span class="sub">${o.descricao}</span>${(o.anexos&&o.anexos.length) ? '<br>'+o.anexos.map(a=>`<a href="${a.url}" target="_blank" rel="noopener" class="sub" style="text-decoration:underline;" onclick="event.stopPropagation();">📎 ${a.nome}</a>`).join(' · ') : ''}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+            <span class="mono">${o.horas_gastas}h</span>
+            <div style="display:flex;gap:6px;">
+              ${o.orcamento_id ? `<button class="btn-ghost" style="padding:4px 8px;font-size:11px;" onclick="event.stopPropagation();reenviarOS('${o.id}')">${iconEnviar} Reenviar</button>` : ''}
+              <button class="del-btn" onclick="event.stopPropagation();excluirOS('${o.id}')">×</button>
+            </div>
+          </div>
         </div>
       `).join('') : '<div class="empty-state"><p>Nenhuma OS registrada ainda.</p></div>';
     }catch(e){ saldoBox.innerHTML=''; list.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
@@ -1785,11 +1802,22 @@ async function concluirCadastroGoogle(){
     const horas = parseFloat(document.getElementById('osHoras').value)||0;
     if(!data || !descricao){ alert('Preenche data e descrição.'); return; }
     try{
-      let anexos = [];
+      let anexosNovos = [];
       if(osAnexosSelecionados.length){
-        anexos = await Promise.all(osAnexosSelecionados.map(f=>uploadOsAnexo(clienteId, f)));
+        anexosNovos = await Promise.all(osAnexosSelecionados.map(f=>uploadOsAnexo(clienteId, f)));
       }
-      const payload = { empresa_id: empresaId, cliente_id: clienteId, orcamento_id: osContratoAtual, data, hora, descricao, horas_gastas: horas, anexos };
+
+      if(editingOsId){
+        const anexos = editingOsAnexosExistentes.concat(anexosNovos);
+        const payload = { data, hora, descricao, horas_gastas: horas, anexos };
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/ordens_servico?id=eq.${editingOsId}`, { method:'PATCH', headers: authHeaders(), body: JSON.stringify(payload) });
+        if(!res.ok){ alert('Não deu pra salvar as alterações agora.'); return; }
+        cancelarEdicaoOS();
+        await carregarOS();
+        return;
+      }
+
+      const payload = { empresa_id: empresaId, cliente_id: clienteId, orcamento_id: osContratoAtual, data, hora, descricao, horas_gastas: horas, anexos: anexosNovos };
       const res = await fetch(`${SUPABASE_URL}/rest/v1/ordens_servico`, { method:'POST', headers: authHeaders(), body: JSON.stringify(payload) });
       if(!res.ok){ alert('Não deu pra salvar a OS agora.'); return; }
 
@@ -1803,6 +1831,68 @@ async function concluirCadastroGoogle(){
       document.getElementById('osAnexosInput').value=''; osAnexosSelecionados=[]; renderOsAnexosSelecionados();
       await carregarOS();
     }catch(e){ alert('Não deu pra salvar a OS agora.'); }
+  }
+
+  function abrirEditarOS(id){
+    const o = osListCache.find(x=>x.id===id);
+    if(!o) return;
+    editingOsId = id;
+    editingOsAnexosExistentes = o.anexos || [];
+    document.getElementById('osData').value = o.data;
+    document.getElementById('osHora').value = o.hora ? o.hora.slice(0,5) : '';
+    document.getElementById('osDescricao').value = o.descricao || '';
+    document.getElementById('osHoras').value = o.horas_gastas;
+    document.getElementById('osAnexosInput').value = '';
+    osAnexosSelecionados = [];
+    renderOsAnexosSelecionados();
+    renderOsAnexosExistentes();
+    document.getElementById('osSalvarBtn').textContent = 'Salvar alterações';
+    document.getElementById('osCancelarBtn').style.display = 'block';
+    document.getElementById('screen-os').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function renderOsAnexosExistentes(){
+    const box = document.getElementById('osAnexosExistentes');
+    if(!editingOsId || !editingOsAnexosExistentes.length){ box.innerHTML=''; return; }
+    box.innerHTML = '<div class="hint" style="margin-top:6px;">Anexos já salvos: ' + editingOsAnexosExistentes.map(a=>`<a href="${a.url}" target="_blank" rel="noopener" style="text-decoration:underline;">📎 ${a.nome}</a>`).join(' · ') + '</div>';
+  }
+
+  function cancelarEdicaoOS(){
+    editingOsId = null;
+    editingOsAnexosExistentes = [];
+    document.getElementById('osData').value = new Date().toISOString().slice(0,10);
+    document.getElementById('osHora').value = '';
+    document.getElementById('osDescricao').value = '';
+    document.getElementById('osHoras').value = '';
+    document.getElementById('osAnexosInput').value = '';
+    osAnexosSelecionados = [];
+    renderOsAnexosSelecionados();
+    renderOsAnexosExistentes();
+    document.getElementById('osSalvarBtn').textContent = 'Salvar OS';
+    document.getElementById('osCancelarBtn').style.display = 'none';
+  }
+
+  async function excluirOS(id){
+    if(!confirm('Excluir essa Ordem de Serviço? Essa ação não pode ser desfeita.')) return;
+    try{
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/ordens_servico?id=eq.${id}`, { method:'DELETE', headers: authHeaders() });
+      if(!res.ok){ alert('Não deu pra excluir agora.'); return; }
+      if(editingOsId===id) cancelarEdicaoOS();
+      await carregarOS();
+    }catch(e){ alert('Não deu pra excluir agora.'); }
+  }
+
+  async function reenviarOS(id){
+    const o = osListCache.find(x=>x.id===id);
+    const clienteId = document.getElementById('osClienteSelect').value;
+    const cliente = clientesCache.find(c=>c.id===clienteId);
+    if(!o || !cliente || !osContratoObj || o.orcamento_id!==osContratoObj.id){ alert('Não é possível reenviar essa OS.'); return; }
+    if(!cliente.email){ alert('Esse cliente não tem e-mail cadastrado.'); return; }
+    const consumidoTotal = osListCache.filter(x=>x.orcamento_id===osContratoObj.id).reduce((s,x)=>s+parseFloat(x.horas_gastas||0),0);
+    try{
+      await notificarSaldoBancoHoras({ cliente, contrato: osContratoObj, consumido: consumidoTotal, horasHoje: o.horas_gastas, data: o.data, hora: o.hora, descricao: o.descricao });
+      alert('E-mail reenviado ao cliente.');
+    }catch(e){ alert('Não deu pra reenviar agora.'); }
   }
 
   // ===================== ADMINISTRAÇÃO (super_admin) =====================
