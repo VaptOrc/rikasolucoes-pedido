@@ -26,8 +26,6 @@
   /* Tela de login: nenhuma barra de menu, nem no mobile nem no PC */
   body.tela-login header{display:none;}
   body.tela-login .sidebar{display:none !important;}
-  body.tela-login{background:linear-gradient(135deg,var(--ink) 0%,var(--blueprint) 130%);}
-  body.tela-login main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto;}
 
   header{background:var(--ink);color:var(--white);padding:20px 18px 16px;flex-shrink:0;}
   header .top-row{display:flex;align-items:center;gap:10px;}
@@ -145,10 +143,11 @@
   .btn-danger{background:var(--white);border:1px solid var(--red);color:var(--red);padding:12px;border-radius:10px;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;cursor:pointer;width:100%;margin-top:10px;}
   .sig-img{max-height:46px;display:block;margin:6px 0;}
 
-  #screen-login{background:var(--card);border-radius:20px;max-width:360px;width:100%;margin:0 auto;padding:36px 30px;box-shadow:0 24px 60px rgba(11,20,40,.35);}
+  #screen-login{padding-top:40px;max-width:360px;margin:0 auto;}
   .login-brand{text-align:center;margin-bottom:28px;}
-  .login-brand .login-logo{display:block;margin:0 auto;max-width:210px;max-height:78px;}
-  .login-brand .login-subtitle{margin:14px 0 0;font-size:12.5px;color:var(--slate);}
+  .login-brand .login-logo{display:block;margin:0 auto 14px;max-width:180px;max-height:64px;}
+  .login-brand .login-title{margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;letter-spacing:.5px;color:var(--ink);}
+  .login-brand .login-subtitle{margin:0;font-size:12.5px;color:var(--slate);}
   .login-divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--slate);font-size:11.5px;}
   .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--line);}
   .login-toggle{display:flex;gap:8px;margin-top:14px;}
@@ -181,7 +180,7 @@
     header .subtitle{color:var(--slate);}
     header .back{color:var(--ink);}
     main{max-width:880px;margin:0 auto;width:100%;padding:28px 36px 60px;}
-    body.tela-login main{max-width:none;padding:24px;}
+    #screen-login{margin-top:60px;}
     .grid{grid-template-columns:repeat(3,1fr);}
   }
 </style>
@@ -259,6 +258,7 @@
     <section class="screen active" id="screen-login">
       <div class="login-brand">
         <img src="./logo-vaptorc.png" alt="VaptOrc" class="login-logo">
+        <h2 class="login-title">VAPTORC</h2>
         <p class="login-subtitle">Acesse o sistema de orçamentos e clientes</p>
       </div>
       <div class="field-group">
@@ -275,6 +275,18 @@
       </div>
       <button class="cta-full" style="margin-top:4px;" onclick="fazerLogin()">ENTRAR</button>
 
+      <div class="login-divider"><span>ou</span></div>
+
+      <button class="btn-ghost" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="loginComGoogle()">
+        <svg width="18" height="18" viewBox="0 0 48 48" style="flex:none;">
+          <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+          <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+          <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+          <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+        </svg>
+        Continuar com Google
+      </button>
+      <button class="cta-full" id="concluirGoogleBtn" style="display:none;margin-top:10px;" onclick="concluirCadastroGoogle()">Concluir cadastro</button>
       <button class="btn-ghost" style="width:100%;margin-top:10px;" onclick="fazerCadastro()">Criar conta</button>
 
       <div class="logout-link" onclick="esqueciSenha()">Esqueci minha senha</div>
@@ -693,6 +705,7 @@
       </div>
       <div class="doc-actions" id="docActionsView" style="display:none;">
         <button class="btn-ghost" onclick="baixarPdf()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg> Baixar PDF</button>
+        <button class="btn-ghost" onclick="compartilharWhatsApp()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M3 21l1.65-4.95A9 9 0 1 1 8.95 19L3 21z"/></svg> Compartilhar no WhatsApp</button>
         <button class="btn-ghost" id="docViewEditarBtn" onclick="editarOrcamentoAtual()" style="display:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;flex-shrink:0;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Editar</button>
       </div>
       <div class="doc-actions" id="docActionsView2" style="display:none;">
@@ -957,8 +970,7 @@ async function concluirCadastroGoogle(){
     }
     setLoginMsg('Criando conta...');
     try{
-      const redirectTo = window.location.origin + window.location.pathname;
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup?redirect_to=${encodeURIComponent(redirectTo)}`, {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
         method:'POST', headers:{'apikey':ANON_KEY,'Content-Type':'application/json'},
         body: JSON.stringify({email, password: senha})
       });
@@ -1101,7 +1113,9 @@ async function concluirCadastroGoogle(){
     const ok = await carregarContexto();
     if(ok){ await irParaHomeOuBloqueio(); return; }
     showScreen('login', false);
-    setLoginMsg('Não deu pra reconectar sua Agenda agora. Faz login com e-mail e senha e tenta de novo pela tela de Agenda.');
+    document.getElementById('grupoNomeEmpresaLogin').style.display = 'block';
+    document.getElementById('concluirGoogleBtn').style.display = 'block';
+    setLoginMsg('Conta Google conectada! Preenche o nome da sua empresa e clica em "Concluir cadastro".');
     return;
   }
   const saved = localStorage.getItem('vaptorc_session');
@@ -2176,6 +2190,7 @@ async function concluirCadastroGoogle(){
     };
     document.getElementById('docContent').innerHTML = construirDocumentoHTML(ctx);
     window._pendingCliente = { nome: cliente.nome, telefone: cliente.telefone, documento: cliente.documento, email: cliente.email, emailsExtra: orc.emails_extra };
+    window._orcamentoAtual = orc;
     docContexto = { modo: 'view', orcamentoId: id, status: orc.status };
     mostrarAcoesDoc('view', orc.status);
     const aviso = document.getElementById('docModoAviso');
@@ -2236,6 +2251,20 @@ async function concluirCadastroGoogle(){
     recalcTotal();
     showScreen('novo');
     gerarDocumento();
+  }
+
+  function compartilharWhatsApp(){
+    const orc = window._orcamentoAtual;
+    if(!orc){ alert('Abra o orçamento antes de compartilhar.'); return; }
+    const cliente = orc.clientes || {};
+    const digitos = String(cliente.telefone || '').replace(/\D/g,'');
+    if(!digitos){ alert('Esse cliente não tem telefone cadastrado.'); return; }
+    const telefone = digitos.startsWith('55') ? digitos : '55' + digitos;
+    const link = `https://vaptorc.github.io/vaptorc-cliente/?t=${orc.link_publico_token}`;
+    const numeroFmt = String(orc.numero || '').padStart(3,'0');
+    const valor = Number(orc.valor_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2});
+    const texto = `Olá, ${cliente.nome || ''}! Segue o orçamento nº ${numeroFmt}, no valor de R$ ${valor}.\n\nVeja os detalhes e responda pelo link:\n${link}`;
+    window.open(`https://wa.me/${telefone}?text=${encodeURIComponent(texto)}`, '_blank');
   }
 
   function baixarPdf(){
