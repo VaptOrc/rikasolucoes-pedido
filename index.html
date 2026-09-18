@@ -1240,7 +1240,7 @@ async function concluirCadastroGoogle(){
     }catch(e){ /* falha ao criar evento não deve travar o salvamento da OS */ }
   }
 
-  async function notificarSaldoBancoHoras({cliente, contrato, consumido, horasHoje, data, hora, descricao}){
+  async function notificarSaldoBancoHoras({cliente, contrato, consumido, horasHoje, data, hora, descricao, anexos}){
     if(!cliente || !cliente.email || !contrato) return;
     try{
       await fetch('https://n8n.rikasolucoes.com.br/webhook/vaptorc-notificar-saldo', {
@@ -1255,7 +1255,8 @@ async function concluirCadastroGoogle(){
           horas_gastas_hoje: horasHoje,
           contratadas: parseFloat(contrato.carga_horaria_contratada||0),
           consumido,
-          saldo: parseFloat(contrato.carga_horaria_contratada||0) - consumido
+          saldo: parseFloat(contrato.carga_horaria_contratada||0) - consumido,
+          anexos: anexos && anexos.length ? anexos : []
         })
       });
     }catch(e){ /* aviso por e-mail é best-effort, não deve travar a OS */ }
@@ -1795,7 +1796,7 @@ async function concluirCadastroGoogle(){
       const cliente = clientesCache.find(c=>c.id===clienteId);
       criarEventoAgenda({ titulo: `OS — ${cliente ? cliente.nome : 'Cliente'}`, descricao, data, hora, horas });
       if(osContratoObj){
-        notificarSaldoBancoHoras({ cliente, contrato: osContratoObj, consumido: osConsumidoAtual + horas, horasHoje: horas, data, hora, descricao });
+        notificarSaldoBancoHoras({ cliente, contrato: osContratoObj, consumido: osConsumidoAtual + horas, horasHoje: horas, data, hora, descricao, anexos });
       }
 
       document.getElementById('osDescricao').value=''; document.getElementById('osHoras').value=''; document.getElementById('osHora').value='';
