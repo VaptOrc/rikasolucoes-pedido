@@ -187,6 +187,33 @@
     #screen-login{margin-top:60px;}
     .grid{grid-template-columns:repeat(3,1fr);}
   }
+
+  /* ===== RELATÓRIOS / DASHBOARD ===== */
+  .rel-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .rel-periodos{display:flex;gap:6px;flex-wrap:wrap;}
+  .rel-periodos button{background:var(--card);border:1px solid var(--line);color:var(--slate);padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .rel-periodos button.active{background:var(--ink);border-color:var(--ink);color:var(--white);}
+  .rel-pdf-btn{background:var(--copper);color:#fff;border:none;padding:8px 14px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+  .rel-pdf-btn:hover{background:var(--copper-dark);}
+  .rel-periodo-txt{font-size:12px;color:var(--slate);margin:0 0 10px;}
+  .rel-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 22px;}
+  @media(min-width:900px){.rel-kpis{grid-template-columns:repeat(4,1fr);}}
+  .rel-kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:3px;}
+  .rel-kpi-lb{font-size:10.5px;color:var(--slate);font-weight:600;letter-spacing:.4px;text-transform:uppercase;}
+  .rel-kpi b{font-size:18px;color:var(--ink);}
+  .rel-kpi .sub{font-size:11.5px;color:var(--slate);}
+  .rel-bars{display:flex;align-items:stretch;gap:6px;height:170px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 10px 8px;margin-bottom:22px;}
+  .rel-bar-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;}
+  .rel-bar-val{font-size:10px;color:var(--slate);height:14px;line-height:14px;white-space:nowrap;}
+  .rel-bar-track{position:relative;flex:1;width:100%;}
+  .rel-bar{position:absolute;bottom:0;left:18%;right:18%;background:var(--blueprint);border-radius:4px 4px 0 0;}
+  .rel-bar-lb{font-size:10.5px;color:var(--slate);margin-top:4px;text-transform:capitalize;}
+  .rel-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 14px 4px;margin-bottom:22px;}
+  .rel-row{margin-bottom:12px;}
+  .rel-row-top{display:flex;justify-content:space-between;align-items:flex-start;font-size:13px;margin-bottom:5px;gap:8px;}
+  .rel-row-top .sub{color:var(--slate);font-size:12px;}
+  .rel-track{height:8px;background:var(--paper-dim);border-radius:6px;overflow:hidden;}
+  .rel-fill{height:100%;border-radius:6px;}
 </style>
 </head>
 <body class="tela-login">
@@ -445,24 +472,38 @@
 
     <!-- RELATÓRIOS -->
     <section class="screen" id="screen-relatorios">
+      <div class="rel-toolbar">
+        <div class="rel-periodos" id="relPeriodos">
+          <button data-p="30" onclick="setRelPeriodo('30')">30 dias</button>
+          <button data-p="90" class="active" onclick="setRelPeriodo('90')">90 dias</button>
+          <button data-p="365" onclick="setRelPeriodo('365')">12 meses</button>
+          <button data-p="all" onclick="setRelPeriodo('all')">Tudo</button>
+        </div>
+        <button class="rel-pdf-btn" onclick="baixarRelatorioPdf('relDashConteudo','Resumo de orçamentos')">⬇ Baixar PDF</button>
+      </div>
+      <div id="relDashConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
+
+      <p class="section-title" style="margin-top:8px;">RELATÓRIOS DETALHADOS</p>
       <div class="simple-item" onclick="abrirRelatorioStatus()"><div>Orçamentos por status<br><span class="sub">pendente, aprovado, concluído...</span></div><span>→</span></div>
       <div class="simple-item" onclick="abrirRelatorioCategoria()"><div>Comércio × Consultoria<br><span class="sub">quanto vem de cada modelo</span></div><span>→</span></div>
-      <div class="simple-item" onclick="abrirRelatorioBancoHoras()"><div>Banco de horas contratado<br><span class="sub">carga contratada e valor da hora por cliente</span></div><span>→</span></div>
+      <div class="simple-item" onclick="abrirRelatorioBancoHoras()"><div>Banco de horas<br><span class="sub">contratado, consumido e saldo por cliente</span></div><span>→</span></div>
     </section>
 
     <!-- RELATÓRIO: POR STATUS -->
     <section class="screen" id="screen-relatorio-status">
+      <div class="rel-toolbar"><span></span><button class="rel-pdf-btn" onclick="baixarRelatorioPdf('relStatusConteudo','Orçamentos por status')">⬇ Baixar PDF</button></div>
       <div id="relStatusConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
     </section>
 
     <!-- RELATÓRIO: CATEGORIA -->
     <section class="screen" id="screen-relatorio-categoria">
+      <div class="rel-toolbar"><span></span><button class="rel-pdf-btn" onclick="baixarRelatorioPdf('relCategoriaConteudo','Comércio x Consultoria')">⬇ Baixar PDF</button></div>
       <div id="relCategoriaConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
     </section>
 
     <!-- RELATÓRIO: BANCO DE HORAS -->
     <section class="screen" id="screen-relatorio-banco-horas">
-      <div class="empty-state" style="padding:20px 4px;text-align:left;"><p>Mostra o que foi contratado. Pra ver quanto já foi consumido de cada contrato, acesse "Ordens de Serviço".</p></div>
+      <div class="rel-toolbar"><span></span><button class="rel-pdf-btn" onclick="baixarRelatorioPdf('relBancoHorasConteudo','Banco de horas')">⬇ Baixar PDF</button></div>
       <div id="relBancoHorasConteudo"><div class="empty-state"><p>Carregando...</p></div></div>
     </section>
 
@@ -750,7 +791,7 @@
     'plano-full': ['Plano Full', 'libere o VaptOrc sem limites'],
   };
   const tabScreens = ['home','orcamentos','clientes','relatorios'];
-  console.log('[VaptOrc] build 2026-09-16-17 (editar-vai-direto-pra-salvar)');
+  console.log('[VaptOrc] build 2026-09-19-01 (relatorios-dashboard-pdf)');
   let history = ['login'];
   let modoAtual = 'comercio';
   let modeloContratoAtual = 'banco';
@@ -769,7 +810,7 @@
   let inatividadeTimer = null;
   const TEMPO_LIMITE_INATIVIDADE_MS = 60 * 60 * 1000; // 1 hora
   let docContexto = { modo: 'novo' };
-  const statusLabel = {pendente:'Pendente', aprovado:'Aprovado', andamento:'Em andamento', aguardando_pagamento:'Aguardando pagamento', concluido:'Concluído', garantia:'Garantia', cancelado:'Cancelado'};
+  const statusLabel = {pendente:'Pendente', aguardando_aprovacao:'Aguardando aprovação', aprovado:'Aprovado', andamento:'Em andamento', aguardando_pagamento:'Aguardando pagamento', concluido:'Concluído', garantia:'Garantia', cancelado:'Cancelado'};
   const statusOrdem = ['pendente','aguardando_aprovacao','aprovado','andamento','aguardando_pagamento','concluido','garantia','cancelado'];
   const statusConfirmados = ['aprovado','andamento','aguardando_pagamento','concluido','garantia'];
   const tipoItemLabel = {servico:'Serviço', material:'Peça'};
@@ -845,6 +886,7 @@
     if(name==='catalogo') carregarCatalogoLista();
     if(name==='novo'){ popularCatalogoSelect(); popularClienteSelect(); }
     if(name==='admin') carregarAdmin();
+    if(name==='relatorios') carregarDashboard();
   }
   function voltarInterno(){
     if(history.length > 1){
@@ -1618,66 +1660,206 @@ async function concluirCadastroGoogle(){
   }
 
   // ===================== RELATÓRIOS =====================
+  let relPeriodo = '90';
+  const relPeriodoLabel = {'30':'Últimos 30 dias','90':'Últimos 90 dias','365':'Últimos 12 meses','all':'Todo o período'};
+  const relCorStatus = {pendente:'var(--amber)', aguardando_aprovacao:'var(--amber)', aprovado:'var(--blue-status)', andamento:'var(--blueprint)', aguardando_pagamento:'var(--copper)', concluido:'var(--green)', garantia:'var(--green)', cancelado:'var(--red)'};
+  const relBrl = v => 'R$ ' + Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+  const relNum = v => Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
+  const relEsc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const relCompact = v => v>=1000 ? (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mil' : String(Math.round(v));
+  const relVazio = msg => `<div class="empty-state"><p>${msg}</p></div>`;
+  const relSoma = arr => arr.reduce((s,r)=>s+Number(r.valor_total||0),0);
+  const relLinha = (nome, sub, valorTxt, pct, cor) => `
+    <div class="rel-row">
+      <div class="rel-row-top"><span>${nome}${sub ? '<br><span class="sub">'+sub+'</span>' : ''}</span><b>${valorTxt}</b></div>
+      <div class="rel-track"><div class="rel-fill" style="width:${Math.max(0,Math.min(100,pct))}%;background:${cor};"></div></div>
+    </div>`;
+
+  function relFiltroPeriodo(){
+    if(relPeriodo === 'all') return '';
+    const d = new Date();
+    d.setDate(d.getDate() - parseInt(relPeriodo,10));
+    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    return `&data_emissao=gte.${iso}`;
+  }
+  function marcarPeriodoAtivo(){
+    document.querySelectorAll('#relPeriodos button').forEach(b=>b.classList.toggle('active', b.dataset.p === relPeriodo));
+  }
+  function setRelPeriodo(p){
+    relPeriodo = p;
+    carregarDashboard();
+  }
+  async function relBuscarOrcamentos(select){
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}${relFiltroPeriodo()}&select=${select}&order=data_emissao.desc`, { headers: authHeaders() });
+    if(!res.ok) throw new Error('falha ao buscar orçamentos');
+    return await res.json();
+  }
+
+  // ---------- Dashboard ----------
+  async function carregarDashboard(){
+    marcarPeriodoAtivo();
+    const el = document.getElementById('relDashConteudo');
+    el.innerHTML = relVazio('Carregando...');
+    try{
+      const rows = await relBuscarOrcamentos('id,numero,status,categoria,valor_total,data_emissao,cliente_id,clientes(nome)');
+      if(!rows.length){ el.innerHTML = `<p class="rel-periodo-txt">${relPeriodoLabel[relPeriodo]}</p>` + relVazio('Nenhum orçamento nesse período.'); return; }
+
+      const conf = rows.filter(r=>statusConfirmados.includes(r.status));
+      const abertos = rows.filter(r=>['pendente','aguardando_aprovacao'].includes(r.status));
+      const fechado = relSoma(conf);
+      const emAberto = relSoma(abertos);
+      const conversao = Math.round(conf.length / rows.length * 100);
+      const ticket = conf.length ? fechado / conf.length : 0;
+
+      // fechado por mês
+      const porMes = {};
+      conf.forEach(r=>{
+        if(!r.data_emissao) return;
+        const k = r.data_emissao.slice(0,7);
+        porMes[k] = (porMes[k]||0) + Number(r.valor_total||0);
+      });
+      let chaves = Object.keys(porMes).sort();
+      if(chaves.length){
+        const [y0,m0] = chaves[0].split('-').map(Number);
+        const [y1,m1] = chaves[chaves.length-1].split('-').map(Number);
+        const todos = []; let y=y0, m=m0;
+        while(y<y1 || (y===y1 && m<=m1)){ todos.push(y+'-'+String(m).padStart(2,'0')); m++; if(m>12){ m=1; y++; } }
+        chaves = todos.slice(-12);
+      }
+      const maxMes = Math.max(1, ...chaves.map(k=>porMes[k]||0));
+      const mesesHtml = chaves.length ? '<div class="rel-bars">' + chaves.map(k=>{
+        const v = porMes[k]||0;
+        const h = v ? Math.max(4, Math.round(v/maxMes*100)) : 0;
+        const [yy,mm] = k.split('-');
+        const lb = new Date(+yy, +mm-1, 1).toLocaleDateString('pt-BR',{month:'short'}).replace('.','');
+        return `<div class="rel-bar-col"><span class="rel-bar-val">${v ? relCompact(v) : ''}</span><div class="rel-bar-track"><div class="rel-bar" style="height:${h}%"></div></div><span class="rel-bar-lb">${lb}</span></div>`;
+      }).join('') + '</div>' : relVazio('Nenhum orçamento aprovado nesse período.');
+
+      // funil por status
+      const porStatus = {};
+      rows.forEach(r=>{ (porStatus[r.status] = porStatus[r.status] || {qtd:0,total:0}); porStatus[r.status].qtd++; porStatus[r.status].total += Number(r.valor_total||0); });
+      const statusHtml = statusOrdem.filter(s=>porStatus[s]).map(s=>
+        relLinha(statusLabel[s]||s, porStatus[s].qtd+' orçamento(s)', relBrl(porStatus[s].total), porStatus[s].qtd/rows.length*100, relCorStatus[s]||'var(--slate)')
+      ).join('');
+
+      // categoria (só fechado)
+      const cat = { comercio:0, consultoria:0 };
+      conf.forEach(r=>{ if(cat[r.categoria]!==undefined) cat[r.categoria] += Number(r.valor_total||0); });
+      const totalCat = cat.comercio + cat.consultoria;
+      const catHtml = totalCat ? (
+        relLinha('Comércio & Serviço', Math.round(cat.comercio/totalCat*100)+'% do fechado', relBrl(cat.comercio), cat.comercio/totalCat*100, 'var(--blueprint)') +
+        relLinha('Consultoria & Suporte', Math.round(cat.consultoria/totalCat*100)+'% do fechado', relBrl(cat.consultoria), cat.consultoria/totalCat*100, 'var(--copper)')
+      ) : relVazio('Sem valores fechados nesse período.');
+
+      // top clientes (fechado)
+      const porCliente = {};
+      conf.forEach(r=>{
+        const nome = r.clientes ? r.clientes.nome : '—';
+        const k = r.cliente_id || nome;
+        (porCliente[k] = porCliente[k] || {nome, qtd:0, total:0});
+        porCliente[k].qtd++; porCliente[k].total += Number(r.valor_total||0);
+      });
+      const top = Object.values(porCliente).sort((a,b)=>b.total-a.total).slice(0,5);
+      const maxCli = top.length ? top[0].total : 1;
+      const topHtml = top.length ? top.map(c=>relLinha(relEsc(c.nome), c.qtd+' orçamento(s)', relBrl(c.total), c.total/maxCli*100, 'var(--green)')).join('') : relVazio('Sem valores fechados nesse período.');
+
+      el.innerHTML = `
+        <p class="rel-periodo-txt">${relPeriodoLabel[relPeriodo]} · ${rows.length} orçamento(s) emitido(s)</p>
+        <div class="rel-kpis">
+          <div class="rel-kpi"><span class="rel-kpi-lb">Fechado</span><b>${relBrl(fechado)}</b><span class="sub">${conf.length} aprovado(s) em diante</span></div>
+          <div class="rel-kpi"><span class="rel-kpi-lb">Em aberto</span><b>${relBrl(emAberto)}</b><span class="sub">${abertos.length} aguardando resposta</span></div>
+          <div class="rel-kpi"><span class="rel-kpi-lb">Conversão</span><b>${conversao}%</b><span class="sub">aprovados ÷ emitidos</span></div>
+          <div class="rel-kpi"><span class="rel-kpi-lb">Ticket médio</span><b>${relBrl(ticket)}</b><span class="sub">por orçamento fechado</span></div>
+        </div>
+        <p class="section-title">FECHADO POR MÊS</p>
+        ${mesesHtml}
+        <p class="section-title">ORÇAMENTOS POR STATUS</p>
+        <div class="rel-card">${statusHtml}</div>
+        <p class="section-title">FECHADO: COMÉRCIO × CONSULTORIA</p>
+        <div class="rel-card">${catHtml}</div>
+        <p class="section-title">MAIORES CLIENTES (FECHADO)</p>
+        <div class="rel-card">${topHtml}</div>`;
+    }catch(e){ el.innerHTML = relVazio('Não deu pra carregar agora.'); }
+  }
+
+  // ---------- Relatórios detalhados ----------
   async function abrirRelatorioStatus(){
     showScreen('relatorio-status');
     const el = document.getElementById('relStatusConteudo');
-    el.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    el.innerHTML = relVazio('Carregando...');
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=status,valor_total`, { headers: authHeaders() });
-      const rows = res.ok ? await res.json() : [];
+      const rows = await relBuscarOrcamentos('status,valor_total');
       const porStatus = {};
-      rows.forEach(r=>{
-        if(!porStatus[r.status]) porStatus[r.status] = { qtd:0, total:0 };
-        porStatus[r.status].qtd += 1;
-        porStatus[r.status].total += Number(r.valor_total||0);
-      });
-      const linhas = statusOrdem.filter(s=>porStatus[s]).map(s=>`
-        <div class="simple-item" style="cursor:default;">
-          <div>${statusLabel[s]}<br><span class="sub">${porStatus[s].qtd} orçamento(s)</span></div>
-          <span class="valor">R$ ${porStatus[s].total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
-        </div>
-      `).join('');
-      el.innerHTML = linhas || '<div class="empty-state"><p>Nenhum orçamento ainda.</p></div>';
-    }catch(e){ el.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
+      rows.forEach(r=>{ (porStatus[r.status] = porStatus[r.status] || {qtd:0,total:0}); porStatus[r.status].qtd++; porStatus[r.status].total += Number(r.valor_total||0); });
+      const linhas = statusOrdem.filter(s=>porStatus[s]).map(s=>
+        relLinha(statusLabel[s]||s, porStatus[s].qtd+' orçamento(s)', relBrl(porStatus[s].total), porStatus[s].qtd/rows.length*100, relCorStatus[s]||'var(--slate)')
+      ).join('');
+      el.innerHTML = `<p class="rel-periodo-txt">${relPeriodoLabel[relPeriodo]} · total: ${relBrl(relSoma(rows))}</p>` + (linhas ? `<div class="rel-card">${linhas}</div>` : relVazio('Nenhum orçamento nesse período.'));
+    }catch(e){ el.innerHTML = relVazio('Não deu pra carregar agora.'); }
   }
 
   async function abrirRelatorioCategoria(){
     showScreen('relatorio-categoria');
     const el = document.getElementById('relCategoriaConteudo');
-    el.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    el.innerHTML = relVazio('Carregando...');
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&select=categoria,valor_total`, { headers: authHeaders() });
-      const rows = res.ok ? await res.json() : [];
-      const grupos = { comercio: {qtd:0,total:0}, consultoria: {qtd:0,total:0} };
-      rows.forEach(r=>{
-        if(!grupos[r.categoria]) grupos[r.categoria] = {qtd:0,total:0};
-        grupos[r.categoria].qtd += 1;
-        grupos[r.categoria].total += Number(r.valor_total||0);
-      });
+      const rows = await relBuscarOrcamentos('categoria,valor_total');
+      const grupos = { comercio:{qtd:0,total:0}, consultoria:{qtd:0,total:0} };
+      rows.forEach(r=>{ if(!grupos[r.categoria]) grupos[r.categoria] = {qtd:0,total:0}; grupos[r.categoria].qtd++; grupos[r.categoria].total += Number(r.valor_total||0); });
       const nomes = { comercio:'Comércio & Serviço', consultoria:'Consultoria & Suporte' };
-      el.innerHTML = ['comercio','consultoria'].map(k=>`
-        <div class="simple-item" style="cursor:default;">
-          <div>${nomes[k]}<br><span class="sub">${grupos[k].qtd} orçamento(s)</span></div>
-          <span class="valor">R$ ${grupos[k].total.toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>
-        </div>
-      `).join('');
-    }catch(e){ el.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
+      const totalGeral = grupos.comercio.total + grupos.consultoria.total;
+      el.innerHTML = `<p class="rel-periodo-txt">${relPeriodoLabel[relPeriodo]} · total: ${relBrl(totalGeral)}</p><div class="rel-card">` +
+        ['comercio','consultoria'].map(k=>relLinha(nomes[k], grupos[k].qtd+' orçamento(s)', relBrl(grupos[k].total), totalGeral ? grupos[k].total/totalGeral*100 : 0, k==='comercio' ? 'var(--blueprint)' : 'var(--copper)')).join('') + '</div>';
+    }catch(e){ el.innerHTML = relVazio('Não deu pra carregar agora.'); }
   }
 
   async function abrirRelatorioBancoHoras(){
     showScreen('relatorio-banco-horas');
     const el = document.getElementById('relBancoHorasConteudo');
-    el.innerHTML = '<div class="empty-state"><p>Carregando...</p></div>';
+    el.innerHTML = relVazio('Carregando...');
     try{
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&modelo_contrato=eq.banco_horas&select=numero,status,carga_horaria_contratada,valor_hora,valor_pacote,clientes(nome)&order=created_at.desc`, { headers: authHeaders() });
-      const rows = res.ok ? await res.json() : [];
-      el.innerHTML = rows.length ? rows.map(r=>`
-        <div class="simple-item" style="cursor:default;">
-          <div>${r.clientes ? r.clientes.nome : '—'}<br><span class="sub">ORÇ-${String(r.numero).padStart(3,'0')} · ${r.carga_horaria_contratada||'—'}h contratadas${r.valor_hora ? ' · R$ '+r.valor_hora.toLocaleString('pt-BR',{minimumFractionDigits:2})+'/h' : ''}</span></div>
-          <span class="badge status-${r.status}">${statusLabel[r.status]||r.status}</span>
-        </div>
-      `).join('') : '<div class="empty-state"><p>Nenhum contrato de banco de horas ainda.</p></div>';
-    }catch(e){ el.innerHTML = '<div class="empty-state"><p>Não deu pra carregar agora.</p></div>'; }
+      const [resO, resOS] = await Promise.all([
+        fetch(`${SUPABASE_URL}/rest/v1/orcamentos?empresa_id=eq.${empresaId}&modelo_contrato=eq.banco_horas&select=id,numero,status,carga_horaria_contratada,valor_hora,valor_pacote,clientes(nome)&order=created_at.desc`, { headers: authHeaders() }),
+        fetch(`${SUPABASE_URL}/rest/v1/ordens_servico?empresa_id=eq.${empresaId}&orcamento_id=not.is.null&select=orcamento_id,horas_gastas`, { headers: authHeaders() })
+      ]);
+      const rows = resO.ok ? await resO.json() : [];
+      const oss = resOS.ok ? await resOS.json() : [];
+      const consumido = {};
+      oss.forEach(o=>{ consumido[o.orcamento_id] = (consumido[o.orcamento_id]||0) + Number(o.horas_gastas||0); });
+      el.innerHTML = rows.length ? '<div class="rel-card">' + rows.map(r=>{
+        const carga = Number(r.carga_horaria_contratada||0);
+        const usado = consumido[r.id] || 0;
+        const saldo = carga - usado;
+        const pct = carga ? usado/carga*100 : 0;
+        const cor = pct >= 100 ? 'var(--red)' : (pct >= 80 ? 'var(--amber)' : 'var(--green)');
+        const sub = `ORÇ-${String(r.numero).padStart(3,'0')} · ${relNum(usado)}h de ${relNum(carga)}h · saldo ${relNum(saldo)}h${r.valor_hora ? ' · '+relBrl(r.valor_hora)+'/h' : ''}`;
+        return relLinha(relEsc(r.clientes ? r.clientes.nome : '—'), sub, statusLabel[r.status]||r.status, pct, cor);
+      }).join('') + '</div>' : relVazio('Nenhum contrato de banco de horas ainda.');
+    }catch(e){ el.innerHTML = relVazio('Não deu pra carregar agora.'); }
+  }
+
+  // ---------- Exportar relatório em PDF ----------
+  function baixarRelatorioPdf(elId, titulo){
+    const origem = document.getElementById(elId);
+    if(!origem) return;
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;background:#fff;padding:24px;font-family:Inter,sans-serif;color:#16233D;';
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    wrap.innerHTML = `<div style="border-bottom:2px solid #B9662E;padding-bottom:10px;margin-bottom:16px;">
+      <div style="font-size:11px;letter-spacing:.5px;color:#9A5323;font-weight:600;">${relEsc((company.nome||'').toUpperCase())}</div>
+      <div style="font-size:20px;font-weight:700;margin-top:2px;">${relEsc(titulo)}</div>
+      <div style="font-size:11px;color:#5B6472;margin-top:2px;">Gerado em ${hoje}</div></div>`;
+    wrap.appendChild(origem.cloneNode(true));
+    document.body.appendChild(wrap);
+    const slug = titulo.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').toLowerCase();
+    const limpar = () => { if(wrap.parentNode) wrap.parentNode.removeChild(wrap); };
+    html2pdf().from(wrap).set({
+      margin: 10,
+      filename: `relatorio-${slug}-${new Date().toISOString().slice(0,10)}.pdf`,
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css','legacy'] }
+    }).save().then(limpar).catch(limpar);
   }
 
   // ===================== ORDENS DE SERVIÇO =====================
